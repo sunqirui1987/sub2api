@@ -113,6 +113,8 @@ sh deploy.sh admin-password \
 
 ## 四、更新镜像并重启
 
+生产升级请优先按 [升级镜像与回滚手册](./readme_update.md) 执行，里面包含 PostgreSQL / Redis 备份、健康检查和回滚步骤。
+
 App 更新到新的镜像时，先修改 `$HOME/sub2api-app/.env` 里的 `SUB2API_IMAGE`，然后执行：
 
 ```bash
@@ -186,7 +188,7 @@ cd "$HOME/sub2api-postgres" && docker compose --env-file .env up -d
 cd "$HOME/sub2api-redis" && docker compose --env-file .env up -d
 ```
 
-## 五、彻底删除本项目 Docker 与本项目数据
+## 六、彻底删除本项目 Docker 与本项目数据
 
 危险：下面命令会删除 Sub2API 的容器、配置文件和本地数据目录。PostgreSQL 与 Redis 数据删除后无法恢复，除非你已经有备份。
 
@@ -231,7 +233,7 @@ docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep 'sub2api' | awk
 docker system prune -f
 ```
 
-## 六、删除当前机器上的所有 Docker 容器
+## 七、删除当前机器上的所有 Docker 容器
 
 危险：这会停止并删除当前机器上的所有容器，不只 Sub2API。
 
@@ -248,7 +250,7 @@ docker ps -aq | xargs -r docker stop
 docker ps -aq | xargs -r docker rm
 ```
 
-## 七、删除当前机器上的所有 Docker 数据
+## 八、删除当前机器上的所有 Docker 数据
 
 极度危险：这会删除当前机器上的所有容器、镜像、网络、构建缓存和未被容器使用的数据卷。不要在还有其他业务运行的机器上执行。
 
@@ -266,7 +268,7 @@ sudo rm -rf /var/lib/docker
 sudo systemctl start docker
 ```
 
-## 八、常见排查
+## 九、常见排查
 
 查看容器最近 200 行日志：
 
