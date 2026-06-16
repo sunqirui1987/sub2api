@@ -1,0 +1,32 @@
+services:
+  redis:
+    image: ${REDIS_IMAGE:-redis:8-alpine}
+    container_name: ${REDIS_CONTAINER_NAME:-sub2api-redis}
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: ${NOFILE_SOFT:-100000}
+        hard: ${NOFILE_HARD:-100000}
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command: >
+      sh -c 'exec redis-server
+      --bind 0.0.0.0
+      --protected-mode yes
+      --save 60 1
+      --appendonly yes
+      --appendfsync everysec
+      --maxclients ${REDIS_MAXCLIENTS:-10000}
+      --requirepass "$$REDIS_PASSWORD"'
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - "${REDIS_BIND_HOST:-0.0.0.0}:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s

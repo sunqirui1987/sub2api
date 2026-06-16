@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1
+
+ARG BASE_IMAGE=sub2api:latest
+
+FROM ${BASE_IMAGE}
+
+LABEL maintainer="Wei-Shaw <github.com/Wei-Shaw>"
+LABEL description="Sub2API - AI API Gateway Platform"
+LABEL org.opencontainers.image.source="https://github.com/Wei-Shaw/sub2api"
+
+WORKDIR /app
+
+ARG BACKEND_BINARY=backend/bin/sub2api-linux-amd64
+
+RUN rm -rf /app/resources
+COPY --chown=sub2api:sub2api --chmod=755 ${BACKEND_BINARY} /app/sub2api
+COPY --chown=sub2api:sub2api backend/resources /app/resources
+COPY --chmod=755 deploy/docker-entrypoint.sh /app/docker-entrypoint.sh
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD wget -q -T 5 -O /dev/null http://localhost:${SERVER_PORT:-8080}/health || exit 1
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["/app/sub2api"]
+
