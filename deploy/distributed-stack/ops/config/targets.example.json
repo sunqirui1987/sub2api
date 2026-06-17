@@ -1,0 +1,14 @@
+[
+  {
+    "id": "qn-codex",
+    "name": "qn-codex.tapsvc.com",
+    "baseUrl": "https://qn-codex.tapsvc.com",
+    "apiKey": "<admin-api-key>"
+  },
+  {
+    "id": "qn-codex-8002",
+    "name": "qn-codex.tapsvc.com:8002",
+    "baseUrl": "https://qn-codex.tapsvc.com:8002",
+    "apiKey": "<admin-api-key>"
+  }
+]

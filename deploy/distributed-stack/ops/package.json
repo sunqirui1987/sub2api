@@ -1,0 +1,14 @@
+{
+  "name": "sub2api-ops-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Public multi-target Sub2API ops dashboard server",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/*.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

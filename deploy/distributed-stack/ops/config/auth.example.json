@@ -1,0 +1,6 @@
+{
+  "username": "admin",
+  "password": "change-me",
+  "cookieName": "sub2api_ops_session",
+  "sessionTtlSeconds": 43200
+}
