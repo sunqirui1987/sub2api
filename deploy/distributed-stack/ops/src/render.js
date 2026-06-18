@@ -155,6 +155,7 @@ function renderPage(config) {
           <select class="select" id="timeRangeSelect" aria-label="时间范围"><option value="5m">近5分钟</option><option value="30m">近30分钟</option><option value="1h" selected>近1小时</option><option value="6h">近6小时</option><option value="24h">近24小时</option></select>
           <button class="icon-btn" id="refreshBtn" title="刷新">↻</button>
           <span class="divider"></span>
+          <a class="action-btn" id="logsLink" href="${escapeHtml(config.pagePath)}/logs">▤ <span>日志面板</span></a>
           <a class="action-btn primary" id="settingsLink" target="_blank" rel="noreferrer">⚙ <span>后台设置</span></a>
           <button class="icon-btn" id="fullscreenBtn" title="全屏">⛶</button>
         </div>
@@ -315,8 +316,8 @@ function renderPage(config) {
     function selectedTarget() { return targets.find(target => target.id === $('targetSelect')?.value) || targets[0]; }
     function selectedWindow() { return document.querySelector('.seg.active')?.dataset.window || '1min'; }
     function timeRangeLabel() { const select = $('timeRangeSelect'); return select ? select.options[select.selectedIndex].textContent : '近1小时'; }
-    function renderTargets() { const select = $('targetSelect'); if (!select) return; select.innerHTML = targets.length ? targets.map(target => '<option value="' + target.id + '">' + target.name + (target.configured ? '' : '（未配置Key）') + '</option>').join('') : '<option value="">未配置服务器</option>'; const saved = localStorage.getItem('public_ops_target'); if (saved && targets.some(target => target.id === saved)) select.value = saved; updateSettingsLink(); }
-    function updateSettingsLink() { const target = selectedTarget(); const link = $('settingsLink'); if (link && target) link.href = target.baseUrl + '/admin/settings'; }
+    function renderTargets() { const select = $('targetSelect'); if (!select) return; select.innerHTML = targets.length ? targets.map(target => '<option value="' + target.id + '">' + target.name + (target.configured ? '' : '（未配置Key）') + '</option>').join('') : '<option value="">未配置服务器</option>'; const saved = localStorage.getItem('public_ops_target'); if (saved && targets.some(target => target.id === saved)) select.value = saved; updateTargetLinks(); }
+    function updateTargetLinks() { const target = selectedTarget(); const settings = $('settingsLink'); if (settings && target) settings.href = target.baseUrl + '/admin/settings'; const logs = $('logsLink'); if (logs) { const params = new URLSearchParams(); if (target && target.id) params.set('target', target.id); logs.href = apiBase + '/logs' + (params.toString() ? '?' + params.toString() : ''); } }
     function drawSpark(points) { const svg = $('sparkline'); if (!svg) return; const values = (points || []).slice(-32).map(p => Number(p.qps || 0)); const max = Math.max(...values, 0.1); const path = values.map((v, i) => { const x = values.length <= 1 ? 0 : (i / (values.length - 1)) * 420; const y = 38 - (v / max) * 30; return (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }).join(' '); svg.innerHTML = '<path d="' + path + '" fill="none" stroke="#9dbcf8" stroke-width="4" stroke-linecap="round"/>'; }
     function drawTrend(points) { const canvas = $('trendCanvas'); if (!canvas) return; const rect = canvas.parentElement.getBoundingClientRect(); const dpr = window.devicePixelRatio || 1; canvas.width = Math.max(1, Math.floor(rect.width * dpr)); canvas.height = Math.max(1, Math.floor(rect.height * dpr)); canvas.style.width = rect.width + 'px'; canvas.style.height = rect.height + 'px'; const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, rect.width, rect.height); ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; for (let i = 0; i < 4; i++) { const y = 12 + i * ((rect.height - 24) / 3); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(rect.width, y); ctx.stroke(); } const values = (points || []).slice(-48).map(p => Number(p.request_count || 0)); const max = Math.max(...values, 1); ctx.strokeStyle = '#4f7deb'; ctx.lineWidth = 3; ctx.beginPath(); values.forEach((v, i) => { const x = values.length <= 1 ? 0 : (i / (values.length - 1)) * rect.width; const y = rect.height - 14 - (v / max) * (rect.height - 28); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.stroke(); }
     function renderList(id, rows) { const el = $(id); if (!el) return; el.innerHTML = rows.map(row => '<div class="check"><span>' + row[0] + '</span><strong>' + row[1] + '</strong></div>').join(''); }
@@ -589,7 +590,7 @@ function renderPage(config) {
       set('errorDetailContent', currentErrorText);
       $('errorModal')?.classList.add('open');
     }
-    $('targetSelect')?.addEventListener('change', () => { localStorage.setItem('public_ops_target', $('targetSelect').value); updateSettingsLink(); load().catch(console.error); });
+    $('targetSelect')?.addEventListener('change', () => { localStorage.setItem('public_ops_target', $('targetSelect').value); updateTargetLinks(); load().catch(console.error); });
     $('timeRangeSelect')?.addEventListener('change', () => load().catch(console.error));
     document.querySelectorAll('.seg').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('.seg').forEach(item => item.classList.remove('active')); button.classList.add('active'); loadRealtime().catch(console.error); }));
     document.addEventListener('click', event => {
@@ -635,6 +636,445 @@ function renderPage(config) {
     loadTargets().then(() => load()).catch(console.error);
     setInterval(() => load().catch(console.error), refreshMs);
     addEventListener('resize', () => load().catch(console.error));
+  </script>
+</body>
+</html>`
+}
+
+function renderLogsPage(config) {
+  const pageTitle = `${config.serviceName} 日志面板`
+  return `<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(pageTitle)}</title>
+  <style>
+    :root {
+      --bg: #eef8f8;
+      --panel: #fff;
+      --soft: #f8fafc;
+      --line: #e6eaf0;
+      --text: #111827;
+      --muted: #7b8494;
+      --blue: #4f7deb;
+      --blue-soft: #dbeafe;
+      --green: #23945b;
+      --red: #d93a35;
+      --amber: #d97706;
+      --shadow: 0 18px 50px rgba(15, 23, 42, .08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--text); background: linear-gradient(180deg, #f8fbfd 0, var(--bg) 24rem, #f9fafb 100%); }
+    button, input, select { font: inherit; }
+    .topbar { height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; border-bottom: 1px solid rgba(226,232,240,.72); background: rgba(255,255,255,.78); backdrop-filter: blur(14px); color: #697386; font-size: 13px; font-weight: 700; }
+    .admin-chip { display: flex; gap: 10px; align-items: center; }
+    .avatar { width: 30px; height: 30px; border-radius: 999px; background: #49a79b; box-shadow: inset 0 -8px 18px rgba(0,0,0,.1); }
+    .logout-form { margin: 0; }
+    .logout-btn { height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #647084; font-size: 12px; font-weight: 900; cursor: pointer; }
+    .shell { width: min(1720px, calc(100vw - 48px)); margin: 24px auto 30px; }
+    .panel { background: rgba(255,255,255,.9); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); padding: 22px; }
+    .heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+    h1 { margin: 0 0 5px; font-size: 22px; line-height: 1.15; letter-spacing: 0; }
+    .sub { color: var(--muted); font-size: 13px; font-weight: 750; }
+    .controls { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .select, .input, .action-btn { height: 40px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: #334155; font-size: 13px; font-weight: 800; outline: none; }
+    .select { min-width: 190px; padding: 0 12px; }
+    .input { width: 170px; padding: 0 12px; }
+    .input.keyword { width: 260px; }
+    .input.short { width: 108px; }
+    .action-btn { display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; cursor: pointer; text-decoration: none; background: #f5f7fa; }
+    .action-btn.primary { color: #2f62dc; background: var(--blue-soft); border-color: transparent; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 0 14px; }
+    .tab { height: 36px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: #647084; font-size: 13px; font-weight: 950; cursor: pointer; }
+    .tab.active { color: #fff; background: var(--blue); border-color: var(--blue); }
+    .filters { display: grid; grid-template-columns: repeat(6, minmax(130px, 1fr)); gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--soft); }
+    .filters label { display: grid; gap: 6px; color: #647084; font-size: 12px; font-weight: 900; }
+    .filters .wide { grid-column: span 2; }
+    .filters .actions { display: flex; align-items: end; gap: 8px; justify-content: flex-end; }
+    .filter-only-error, .filter-only-system { display: none; }
+    body[data-log-type="errors"] .filter-only-error, body[data-log-type="upstream"] .filter-only-error { display: grid; }
+    body[data-log-type="system"] .filter-only-system { display: grid; }
+    .summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 4px 10px; color: #647084; font-size: 13px; font-weight: 850; }
+    .table-wrap { border: 1px solid var(--line); border-radius: 16px; overflow: auto; background: #fff; }
+    table { width: 100%; border-collapse: collapse; min-width: 1260px; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; color: #647084; font-size: 13px; font-weight: 750; vertical-align: top; }
+    th { position: sticky; top: 0; z-index: 1; background: #f8fafc; color: #7b8494; font-size: 12px; font-weight: 950; }
+    tr:last-child td { border-bottom: 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .truncate { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .message { max-width: 440px; white-space: normal; word-break: break-word; }
+    .badge { display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 950; }
+    .badge.ok { color: var(--green); background: #e7f7ed; }
+    .badge.error { color: var(--red); background: #fde8e8; }
+    .badge.warn { color: var(--amber); background: #fff3d8; }
+    .badge.info { color: #2f62dc; background: var(--blue-soft); }
+    .row-actions { display: flex; gap: 8px; justify-content: flex-end; white-space: nowrap; }
+    .mini-btn { height: 30px; border: 0; border-radius: 8px; padding: 0 10px; color: #4b5563; background: #f1f5f9; font-size: 12px; font-weight: 900; cursor: pointer; }
+    .mini-btn.error { color: var(--red); background: #fff1f1; }
+    .mini-btn.copied { color: var(--green); background: #e7f7ed; }
+    .pager { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 14px; }
+    .empty { padding: 42px; color: #94a3b8; text-align: center; font-weight: 850; }
+    .modal-backdrop { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 32px; background: rgba(15, 23, 42, .45); backdrop-filter: blur(6px); z-index: 40; }
+    .modal-backdrop.open { display: flex; }
+    .modal { width: min(1120px, 94vw); max-height: 92vh; overflow: hidden; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 28px 80px rgba(15, 23, 42, .22); }
+    .modal-header { height: 82px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 28px; border-bottom: 1px solid var(--line); }
+    .modal-title { margin: 0; font-size: 22px; font-weight: 950; }
+    .modal-close { width: 46px; height: 46px; border: 2px solid #3167c9; border-radius: 15px; background: #f8fafc; color: #475569; font-size: 30px; line-height: 1; cursor: pointer; }
+    .modal-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 28px; color: #647084; font-size: 13px; font-weight: 850; }
+    .pre { margin: 0 28px 28px; padding: 18px; max-height: 62vh; overflow: auto; border: 1px solid var(--line); border-radius: 14px; background: #0f172a; color: #dbeafe; font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; white-space: pre-wrap; word-break: break-word; }
+    @media (max-width: 1120px) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .filters .wide { grid-column: span 2; } }
+    @media (max-width: 760px) { .shell { width: min(100vw - 20px, 740px); } .heading { align-items: flex-start; flex-direction: column; } .controls, .select, .input, .action-btn { width: 100%; } .filters { grid-template-columns: 1fr; } .filters .wide { grid-column: span 1; } }
+  </style>
+</head>
+<body>
+  <div class="topbar"><div>运维监控与排障</div><div class="admin-chip"><span class="avatar"></span><span>${escapeHtml(config.authUsername)}</span><form class="logout-form" method="post" action="${escapeHtml(config.pagePath)}/logout"><button class="logout-btn" type="submit">退出</button></form></div></div>
+  <main class="shell">
+    <section class="panel">
+      <header class="heading">
+        <div><h1>日志面板</h1><div class="sub">独立日志入口，可按目标服务器、类型和关键字段筛选。</div></div>
+        <div class="controls">
+          <select class="select" id="targetSelect" aria-label="服务器"></select>
+          <a class="action-btn" href="${escapeHtml(config.pagePath)}">← 返回监控</a>
+          <button class="action-btn primary" id="refreshBtn" type="button">刷新</button>
+        </div>
+      </header>
+      <nav class="tabs" aria-label="日志类型">
+        <button class="tab" data-type="requests" type="button">请求日志</button>
+        <button class="tab" data-type="errors" type="button">请求错误</button>
+        <button class="tab" data-type="upstream" type="button">上游错误</button>
+        <button class="tab" data-type="system" type="button">系统日志</button>
+      </nav>
+      <section class="filters">
+        <label>时间范围<select class="select" id="timeRange"><option value="5m">近5分钟</option><option value="30m">近30分钟</option><option value="1h" selected>近1小时</option><option value="6h">近6小时</option><option value="24h">近24小时</option><option value="7d">近7天</option><option value="30d">近30天</option></select></label>
+        <label class="wide">关键字<input class="input keyword" id="filterQ" type="search" placeholder="request_id / client_request_id / message"></label>
+        <label>平台<input class="input" id="filterPlatform" type="search" placeholder="openai"></label>
+        <label>模型<input class="input" id="filterModel" type="search" placeholder="gpt-5.5"></label>
+        <label class="filter-only-error">状态码<input class="input short" id="filterStatusCodes" inputmode="numeric" placeholder="400,503"></label>
+        <label class="filter-only-error">视图<select class="select" id="filterView"><option value="errors">错误</option><option value="excluded">排除项</option><option value="all">全部</option></select></label>
+        <label class="filter-only-system">级别<select class="select" id="filterLevel"><option value="">全部</option><option value="debug">debug</option><option value="info">info</option><option value="warn">warn</option><option value="error">error</option></select></label>
+        <label class="filter-only-system">组件<input class="input" id="filterComponent" type="search" placeholder="http.access"></label>
+        <label>request_id<input class="input" id="filterRequestID" type="search"></label>
+        <label class="filter-only-system">client_request_id<input class="input" id="filterClientRequestID" type="search"></label>
+        <label>account_id<input class="input short" id="filterAccountID" inputmode="numeric"></label>
+        <label>user_id<input class="input short" id="filterUserID" inputmode="numeric"></label>
+        <label>每页<select class="select" id="pageSize"><option value="50">50 条</option><option value="100" selected>100 条</option><option value="200">200 条</option><option value="500">500 条</option></select></label>
+        <div class="actions"><button class="action-btn" id="resetBtn" type="button">重置</button><button class="action-btn primary" id="searchBtn" type="button">查询</button></div>
+      </section>
+      <div class="summary"><span id="summaryText">准备加载</span><span id="pageText">第 1 页</span></div>
+      <div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table><div class="empty" id="empty" hidden>暂无日志</div></div>
+      <div class="pager"><button class="action-btn" id="prevPage" type="button">上一页</button><button class="action-btn" id="nextPage" type="button">下一页</button></div>
+    </section>
+  </main>
+  <div class="modal-backdrop" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <section class="modal">
+      <header class="modal-header"><h2 class="modal-title" id="detailTitle">日志详情</h2><button class="modal-close" id="detailClose" aria-label="关闭">×</button></header>
+      <div class="modal-toolbar"><div id="detailSummary">完整内容</div><button class="mini-btn" id="copyDetail" type="button">复制</button></div>
+      <pre class="pre" id="detailContent"></pre>
+    </section>
+  </div>
+  <script>
+    const apiBase = ${JSON.stringify(config.pagePath)};
+    const fallbackTargets = ${JSON.stringify(config.publicTargets)};
+    const fmt = new Intl.DateTimeFormat('zh-CN', { hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const $ = id => document.getElementById(id);
+    const typeLabels = { requests: '请求日志', errors: '请求错误', upstream: '上游错误', system: '系统日志' };
+    let targets = fallbackTargets;
+    let state = { type: 'requests', page: 1, pageSize: 100 };
+    let rows = [];
+    let total = 0;
+    let currentDetailText = '';
+    let filterTimer = null;
+    function esc(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]); }
+    function set(id, value) { const el = $(id); if (el) el.textContent = value; }
+    function selectedTarget() { return targets.find(target => target.id === $('targetSelect')?.value) || targets[0]; }
+    function rowValue(row, keys, fallback = '-') { for (const key of keys) { const value = row && row[key]; if (value !== undefined && value !== null && value !== '') return value; } return fallback; }
+    function shortID(value) { const text = String(value || '-'); return text.length > 34 ? text.slice(0, 30) + '...' : text; }
+    function formatTime(value) { if (!value) return '-'; const d = new Date(typeof value === 'number' ? value : value); return Number.isFinite(d.getTime()) ? fmt.format(d).replaceAll('/', '-') : String(value); }
+    function pretty(value) { if (value === undefined || value === null || value === '') return '-'; if (typeof value === 'string') { try { return JSON.stringify(JSON.parse(value), null, 2); } catch { return value; } } try { return JSON.stringify(value, null, 2); } catch { return String(value); } }
+    function copyText(text) {
+      const value = String(text || '');
+      if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(value);
+      const area = document.createElement('textarea');
+      area.value = value;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.left = '-9999px';
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand('copy');
+      document.body.removeChild(area);
+      return Promise.resolve();
+    }
+    function markCopied(button) {
+      if (!button) return;
+      const original = button.textContent || '复制';
+      button.textContent = '已复制';
+      button.classList.add('copied');
+      button.disabled = true;
+      setTimeout(() => { button.textContent = original; button.classList.remove('copied'); button.disabled = false; }, 1100);
+    }
+    function statusBadge(row) {
+      const code = Number(rowValue(row, ['status_code', 'upstream_status_code'], 0));
+      if (!Number.isFinite(code) || code <= 0) return '<span class="badge info">-</span>';
+      return '<span class="badge ' + (code >= 500 ? 'error' : code >= 400 ? 'warn' : 'ok') + '">' + esc(code) + '</span>';
+    }
+    function levelBadge(level) {
+      const v = String(level || '').toLowerCase();
+      const cls = v === 'error' || v === 'fatal' ? 'error' : v === 'warn' || v === 'warning' ? 'warn' : v === 'info' ? 'info' : 'ok';
+      return '<span class="badge ' + cls + '">' + esc(level || '-') + '</span>';
+    }
+    function systemDetail(row) {
+      const extra = row.extra && typeof row.extra === 'object' ? row.extra : {};
+      const parts = [row.message].filter(Boolean);
+      ['status_code', 'latency_ms', 'method', 'path', 'client_ip', 'protocol', 'err', 'error'].forEach(key => {
+        const value = extra[key];
+        if (value !== undefined && value !== null && value !== '') parts.push(key + '=' + value);
+      });
+      return parts.join('  ');
+    }
+    function rowSearchPayload(row) {
+      if (!row || typeof row !== 'object') return row || '';
+      const payload = {};
+      ['id', 'created_at', 'level', 'component', 'message', 'request_id', 'client_request_id', 'platform', 'model', 'status_code', 'upstream_status_code', 'phase', 'error_owner', 'error_source', 'detail', 'error_message', 'response_body', 'upstream_errors', 'extra'].forEach(key => {
+        if (row[key] !== undefined && row[key] !== null && row[key] !== '') payload[key] = row[key];
+      });
+      return Object.keys(payload).length ? payload : row;
+    }
+    function readFilters() {
+      return {
+        timeRange: $('timeRange')?.value || '1h',
+        q: $('filterQ')?.value.trim() || '',
+        platform: $('filterPlatform')?.value.trim() || '',
+        model: $('filterModel')?.value.trim() || '',
+        statusCodes: $('filterStatusCodes')?.value.trim() || '',
+        view: $('filterView')?.value || 'errors',
+        level: $('filterLevel')?.value || '',
+        component: $('filterComponent')?.value.trim() || '',
+        requestID: $('filterRequestID')?.value.trim() || '',
+        clientRequestID: $('filterClientRequestID')?.value.trim() || '',
+        accountID: $('filterAccountID')?.value.trim() || '',
+        userID: $('filterUserID')?.value.trim() || ''
+      };
+    }
+    function writeFilters(filters) {
+      if ($('timeRange')) $('timeRange').value = filters.timeRange || '1h';
+      if ($('filterQ')) $('filterQ').value = filters.q || '';
+      if ($('filterPlatform')) $('filterPlatform').value = filters.platform || '';
+      if ($('filterModel')) $('filterModel').value = filters.model || '';
+      if ($('filterStatusCodes')) $('filterStatusCodes').value = filters.statusCodes || '';
+      if ($('filterView')) $('filterView').value = filters.view || 'errors';
+      if ($('filterLevel')) $('filterLevel').value = filters.level || '';
+      if ($('filterComponent')) $('filterComponent').value = filters.component || '';
+      if ($('filterRequestID')) $('filterRequestID').value = filters.requestID || '';
+      if ($('filterClientRequestID')) $('filterClientRequestID').value = filters.clientRequestID || '';
+      if ($('filterAccountID')) $('filterAccountID').value = filters.accountID || '';
+      if ($('filterUserID')) $('filterUserID').value = filters.userID || '';
+      if ($('pageSize')) $('pageSize').value = String(state.pageSize || 100);
+    }
+    function syncUrl() {
+      const filters = readFilters();
+      const params = new URLSearchParams();
+      const target = selectedTarget();
+      if (target && target.id) params.set('target', target.id);
+      params.set('type', state.type);
+      if (state.page > 1) params.set('page', String(state.page));
+      if (state.pageSize !== 100) params.set('page_size', String(state.pageSize));
+      const map = { timeRange: 'time_range', q: 'q', platform: 'platform', model: 'model', statusCodes: 'status_codes', view: 'view', level: 'level', component: 'component', requestID: 'request_id', clientRequestID: 'client_request_id', accountID: 'account_id', userID: 'user_id' };
+      Object.entries(map).forEach(([key, param]) => {
+        const value = filters[key];
+        if (value && !(key === 'timeRange' && value === '1h') && !(key === 'view' && value === 'errors')) params.set(param, value);
+      });
+      history.replaceState(null, '', location.pathname + '?' + params.toString());
+    }
+    function applyUrlState() {
+      const params = new URLSearchParams(location.search);
+      const type = params.get('type');
+      if (['requests', 'errors', 'upstream', 'system'].includes(type)) state.type = type;
+      state.page = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
+      state.pageSize = Math.min(500, Math.max(20, Number.parseInt(params.get('page_size') || '100', 10) || 100));
+      writeFilters({
+        timeRange: params.get('time_range') || '1h',
+        q: params.get('q') || '',
+        platform: params.get('platform') || '',
+        model: params.get('model') || '',
+        statusCodes: params.get('status_codes') || '',
+        view: params.get('view') || 'errors',
+        level: params.get('level') || '',
+        component: params.get('component') || '',
+        requestID: params.get('request_id') || '',
+        clientRequestID: params.get('client_request_id') || '',
+        accountID: params.get('account_id') || '',
+        userID: params.get('user_id') || ''
+      });
+    }
+    function setActiveType() {
+      document.body.dataset.logType = state.type;
+      document.querySelectorAll('.tab').forEach(button => button.classList.toggle('active', button.dataset.type === state.type));
+      set('summaryText', typeLabels[state.type] + ' · 准备加载');
+    }
+    function renderTargets() {
+      const select = $('targetSelect');
+      if (!select) return;
+      select.innerHTML = targets.length ? targets.map(target => '<option value="' + esc(target.id) + '">' + esc(target.name) + (target.configured ? '' : '（未配置Key）') + '</option>').join('') : '<option value="">未配置服务器</option>';
+      const params = new URLSearchParams(location.search);
+      const fromUrl = params.get('target');
+      const saved = localStorage.getItem('public_ops_target');
+      if (fromUrl && targets.some(target => target.id === fromUrl)) select.value = fromUrl;
+      else if (saved && targets.some(target => target.id === saved)) select.value = saved;
+    }
+    async function loadTargets() {
+      try {
+        const response = await fetch(apiBase + '/api/targets', { cache: 'no-store' });
+        if (response.ok) targets = await response.json();
+      } catch {}
+      renderTargets();
+    }
+    function buildQuery() {
+      const targetID = $('targetSelect') ? $('targetSelect').value : '';
+      const filters = readFilters();
+      state.pageSize = Number($('pageSize')?.value || state.pageSize || 100);
+      const query = new URLSearchParams({
+        target: targetID,
+        time_range: filters.timeRange,
+        page: String(state.page),
+        page_size: String(state.pageSize)
+      });
+      if (filters.q) query.set('q', filters.q);
+      if (filters.platform) query.set('platform', filters.platform);
+      if (filters.model) query.set('model', filters.model);
+      if (filters.requestID) query.set('request_id', filters.requestID);
+      if (filters.accountID) query.set('account_id', filters.accountID);
+      if (filters.userID) query.set('user_id', filters.userID);
+      if (state.type === 'system') {
+        if (filters.level) query.set('level', filters.level);
+        if (filters.component) query.set('component', filters.component);
+        if (filters.clientRequestID) query.set('client_request_id', filters.clientRequestID);
+      } else {
+        if (filters.statusCodes) query.set('status_codes', filters.statusCodes);
+        if (state.type !== 'requests' && filters.view) query.set('view', filters.view);
+      }
+      return query;
+    }
+    function headersForType() {
+      if (state.type === 'system') return ['时间', '级别', '组件', '请求ID', '平台', '模型', '内容', '操作'];
+      if (state.type === 'upstream') return ['时间', '类型', '端点', '平台', '模型', '分组', '用户', '账号', '状态码', '响应内容', '操作'];
+      if (state.type === 'errors') return ['时间', '阶段', '端点', '平台', '模型', '分组', '用户', 'API KEY', '账号', '状态码', '响应内容', '操作'];
+      return ['时间', '类型', '平台', '模型', '耗时', '状态码', '请求ID', '用户', '账号', '操作'];
+    }
+    function renderRows() {
+      const head = $('tableHead');
+      const body = $('tableBody');
+      const empty = $('empty');
+      if (!head || !body || !empty) return;
+      head.innerHTML = '<tr>' + headersForType().map(item => '<th>' + esc(item) + '</th>').join('') + '</tr>';
+      empty.hidden = rows.length > 0;
+      if (state.type === 'system') {
+        body.innerHTML = rows.map((row, index) => '<tr><td>' + esc(formatTime(row.created_at)) + '</td><td>' + levelBadge(row.level) + '</td><td>' + esc(row.component || '-') + '</td><td class="mono truncate" title="' + esc(row.request_id || row.client_request_id || '') + '">' + esc(shortID(row.request_id || row.client_request_id)) + '</td><td>' + esc(row.platform || '-') + '</td><td class="truncate" title="' + esc(row.model || '') + '">' + esc(row.model || '-') + '</td><td class="message">' + esc(systemDetail(row)) + '</td><td><div class="row-actions"><button class="mini-btn" data-copy-row="' + index + '" type="button">复制</button><button class="mini-btn" data-open-row="' + index + '" type="button">详情</button></div></td></tr>').join('');
+      } else if (state.type === 'upstream') {
+        body.innerHTML = rows.map((row, index) => '<tr><td>' + esc(formatTime(rowValue(row, ['created_at', 'at', 'at_unix_ms']))) + '</td><td>' + esc(rowValue(row, ['phase', 'kind'])) + '</td><td class="mono truncate" title="' + esc(rowValue(row, ['upstream_endpoint', 'inbound_endpoint'], '')) + '">' + esc(rowValue(row, ['upstream_endpoint', 'inbound_endpoint'])) + '</td><td>' + esc(rowValue(row, ['platform'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['upstream_model', 'requested_model', 'model'], '')) + '">' + esc(rowValue(row, ['upstream_model', 'requested_model', 'model'])) + '</td><td>' + esc(rowValue(row, ['group_name', 'group_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['user_email', 'user_id'], '')) + '">' + esc(rowValue(row, ['user_email', 'user_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['account_name', 'account_id'], '')) + '">' + esc(rowValue(row, ['account_name', 'account_id'])) + '</td><td>' + statusBadge(row) + '</td><td class="message">' + esc(rowValue(row, ['message', 'detail', 'error_message'])) + '</td><td><div class="row-actions"><button class="mini-btn" data-copy-row="' + index + '" type="button">复制</button><button class="mini-btn error" data-error-row="' + index + '" type="button">错误</button></div></td></tr>').join('');
+      } else if (state.type === 'errors') {
+        body.innerHTML = rows.map((row, index) => '<tr><td>' + esc(formatTime(rowValue(row, ['created_at', 'at']))) + '</td><td>' + esc(rowValue(row, ['phase', 'error_owner'])) + '</td><td class="mono truncate" title="' + esc(rowValue(row, ['inbound_endpoint', 'upstream_endpoint'], '')) + '">' + esc(rowValue(row, ['inbound_endpoint', 'upstream_endpoint'])) + '</td><td>' + esc(rowValue(row, ['platform'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['requested_model', 'model', 'upstream_model'], '')) + '">' + esc(rowValue(row, ['requested_model', 'model', 'upstream_model'])) + '</td><td>' + esc(rowValue(row, ['group_name', 'group_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['user_email', 'user_id'], '')) + '">' + esc(rowValue(row, ['user_email', 'user_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['api_key_name', 'api_key_id'], '')) + '">' + esc(rowValue(row, ['api_key_name', 'api_key_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['account_name', 'account_id'], '')) + '">' + esc(rowValue(row, ['account_name', 'account_id'])) + '</td><td>' + statusBadge(row) + '</td><td class="message">' + esc(rowValue(row, ['message', 'detail', 'error_message'])) + '</td><td><div class="row-actions"><button class="mini-btn" data-copy-row="' + index + '" type="button">复制</button><button class="mini-btn error" data-error-row="' + index + '" type="button">错误</button></div></td></tr>').join('');
+      } else {
+        body.innerHTML = rows.map((row, index) => {
+          const code = rowValue(row, ['status_code'], '-');
+          const isError = String(rowValue(row, ['kind'], '')).toLowerCase() === 'error' || Number(code) >= 400;
+          const requestID = rowValue(row, ['request_id', 'id'], '');
+          return '<tr><td>' + esc(formatTime(rowValue(row, ['created_at', 'at']))) + '</td><td><span class="badge ' + (isError ? 'error' : 'ok') + '">' + (isError ? '失败' : '成功') + '</span></td><td>' + esc(rowValue(row, ['platform'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['model', 'requested_model'], '')) + '">' + esc(rowValue(row, ['model', 'requested_model'])) + '</td><td>' + esc(rowValue(row, ['duration_ms'])) + '</td><td>' + esc(code) + '</td><td class="mono truncate" title="' + esc(requestID) + '">' + esc(shortID(requestID)) + '</td><td>' + esc(rowValue(row, ['user_id'])) + '</td><td>' + esc(rowValue(row, ['account_id'])) + '</td><td><div class="row-actions"><button class="mini-btn" data-copy-row="' + index + '" type="button">复制</button>' + (isError ? '<button class="mini-btn error" data-error-row="' + index + '" type="button">错误</button>' : '<button class="mini-btn" data-open-row="' + index + '" type="button">详情</button>') + '</div></td></tr>';
+        }).join('');
+      }
+    }
+    async function loadLogs() {
+      setActiveType();
+      syncUrl();
+      set('summaryText', typeLabels[state.type] + ' · 加载中...');
+      set('pageText', '第 ' + state.page + ' 页');
+      const query = buildQuery();
+      let url = apiBase + '/api/system-logs?' + query.toString();
+      if (state.type !== 'system') {
+        const remoteType = state.type === 'upstream' ? 'upstream-errors' : state.type === 'errors' ? 'request-errors' : 'requests';
+        query.set('type', remoteType);
+        url = apiBase + '/api/details?' + query.toString();
+      }
+      try {
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const payload = await response.json();
+        const data = payload.data || payload;
+        rows = Array.isArray(data.items) ? data.items : [];
+        total = Number(data.total || rows.length || 0);
+        renderRows();
+        set('summaryText', typeLabels[state.type] + ' · 本页 ' + rows.length + ' 条 / 总计 ' + total + ' 条');
+        set('pageText', '第 ' + state.page + ' 页');
+      } catch (err) {
+        rows = [];
+        total = 0;
+        renderRows();
+        $('empty').hidden = false;
+        $('empty').textContent = '加载失败：' + (err && err.message ? err.message : err);
+        set('summaryText', typeLabels[state.type] + ' · 加载失败');
+      }
+    }
+    async function openErrorDetail(index) {
+      const row = rows[Number(index)];
+      if (!row) return;
+      let payload = rowSearchPayload(row);
+      const targetID = $('targetSelect') ? $('targetSelect').value : '';
+      const errorID = rowValue(row, state.type === 'upstream' ? ['id', 'error_id'] : ['error_id', 'id'], '');
+      if (errorID && String(errorID) !== '-' && state.type !== 'system') {
+        const remoteType = state.type === 'upstream' ? 'upstream-errors' : 'request-errors';
+        try {
+          const response = await fetch(apiBase + '/api/error-detail?target=' + encodeURIComponent(targetID) + '&type=' + encodeURIComponent(remoteType) + '&id=' + encodeURIComponent(errorID), { cache: 'no-store' });
+          if (response.ok) {
+            const result = await response.json();
+            payload = result.data || result;
+          }
+        } catch {}
+      }
+      currentDetailText = pretty(payload);
+      set('detailSummary', '请求ID：' + rowValue(row, ['request_id', 'client_request_id', 'upstream_request_id', 'id']));
+      set('detailContent', currentDetailText);
+      $('detailModal')?.classList.add('open');
+    }
+    function scheduleReload() {
+      clearTimeout(filterTimer);
+      filterTimer = setTimeout(() => { state.page = 1; loadLogs().catch(console.error); }, 320);
+    }
+    document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => {
+      state.type = button.dataset.type || 'requests';
+      state.page = 1;
+      loadLogs().catch(console.error);
+    }));
+    $('targetSelect')?.addEventListener('change', () => { localStorage.setItem('public_ops_target', $('targetSelect').value); state.page = 1; loadLogs().catch(console.error); });
+    $('refreshBtn')?.addEventListener('click', () => loadLogs().catch(console.error));
+    $('searchBtn')?.addEventListener('click', () => { state.page = 1; loadLogs().catch(console.error); });
+    $('resetBtn')?.addEventListener('click', () => {
+      writeFilters({ timeRange: '1h', view: 'errors' });
+      state.page = 1;
+      loadLogs().catch(console.error);
+    });
+    $('pageSize')?.addEventListener('change', () => { state.pageSize = Number($('pageSize').value || 100); state.page = 1; loadLogs().catch(console.error); });
+    $('prevPage')?.addEventListener('click', () => { if (state.page <= 1) return; state.page -= 1; loadLogs().catch(console.error); });
+    $('nextPage')?.addEventListener('click', () => { if (rows.length < state.pageSize && total <= state.page * state.pageSize) return; state.page += 1; loadLogs().catch(console.error); });
+    ['timeRange', 'filterQ', 'filterPlatform', 'filterModel', 'filterStatusCodes', 'filterView', 'filterLevel', 'filterComponent', 'filterRequestID', 'filterClientRequestID', 'filterAccountID', 'filterUserID'].forEach(id => $(id)?.addEventListener(id === 'timeRange' || id === 'filterView' || id === 'filterLevel' ? 'change' : 'input', scheduleReload));
+    document.addEventListener('click', event => {
+      const copy = event.target.closest('[data-copy-row]');
+      if (copy) {
+        const row = rows[Number(copy.dataset.copyRow)];
+        copyText(pretty(rowSearchPayload(row))).then(() => markCopied(copy)).catch(console.error);
+        return;
+      }
+      const open = event.target.closest('[data-open-row]');
+      if (open) openErrorDetail(open.dataset.openRow).catch(console.error);
+      const error = event.target.closest('[data-error-row]');
+      if (error) openErrorDetail(error.dataset.errorRow).catch(console.error);
+    });
+    $('detailClose')?.addEventListener('click', () => $('detailModal')?.classList.remove('open'));
+    $('detailModal')?.addEventListener('click', event => { if (event.target === $('detailModal')) $('detailModal')?.classList.remove('open'); });
+    $('copyDetail')?.addEventListener('click', event => copyText(currentDetailText).then(() => markCopied(event.currentTarget)).catch(console.error));
+    applyUrlState();
+    loadTargets().then(() => { setActiveType(); loadLogs(); }).catch(console.error);
   </script>
 </body>
 </html>`
@@ -735,5 +1175,6 @@ function smallCard(title, id, copyId) {
 
 module.exports = {
   renderLoginPage,
+  renderLogsPage,
   renderPage
 }

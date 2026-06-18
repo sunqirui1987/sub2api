@@ -3,7 +3,7 @@ const { createSession, destroySession, isAuthenticated, verifyCredentials } = re
 const { loadConfig } = require('./config')
 const { json, html, nowIso } = require('./format')
 const { createLocalMetrics } = require('./localMetrics')
-const { renderLoginPage, renderPage } = require('./render')
+const { renderLoginPage, renderLogsPage, renderPage } = require('./render')
 const { buildSnapshot } = require('./snapshot')
 const { createTargetClient } = require('./targetClient')
 
@@ -56,6 +56,15 @@ const server = http.createServer(async (req, res) => {
         return
       }
       html(res, renderPage(config))
+      return
+    }
+
+    if (req.method === 'GET' && (url.pathname === `${config.pagePath}/logs` || url.pathname === `${config.pagePath}/logs/`)) {
+      if (!isAuthenticated(req, config)) {
+        html(res, renderLoginPage(config, Boolean(url.searchParams.get('error'))))
+        return
+      }
+      html(res, renderLogsPage(config))
       return
     }
 
@@ -116,13 +125,37 @@ const server = http.createServer(async (req, res) => {
         kind: url.searchParams.get('kind') || undefined,
         view: url.searchParams.get('view') || undefined,
         status: url.searchParams.get('status') || undefined,
-        status_code: url.searchParams.get('status_code') || undefined,
+        view: url.searchParams.get('view') || undefined,
+        status_codes: url.searchParams.get('status_codes') || url.searchParams.get('status_code') || undefined,
+        phase: url.searchParams.get('phase') || undefined,
+        error_owner: url.searchParams.get('error_owner') || undefined,
         platform: url.searchParams.get('platform') || undefined,
         model: url.searchParams.get('model') || undefined,
         request_id: url.searchParams.get('request_id') || undefined,
-        keyword: url.searchParams.get('keyword') || undefined
+        q: url.searchParams.get('q') || url.searchParams.get('keyword') || undefined
       }
       const result = await targetClient.listDetails(target, type, params)
+      json(res, result.ok ? 200 : 502, result)
+      return
+    }
+
+    if (req.method === 'GET' && url.pathname === `${config.pagePath}/api/system-logs`) {
+      const target = config.targets.find(item => item.id === url.searchParams.get('target')) || config.targets[0]
+      const params = {
+        time_range: url.searchParams.get('time_range') || '1h',
+        page: String(clampInteger(url.searchParams.get('page'), 1, 1, 100000)),
+        page_size: String(clampInteger(url.searchParams.get('page_size'), 100, 20, 200)),
+        level: url.searchParams.get('level') || undefined,
+        component: url.searchParams.get('component') || undefined,
+        request_id: url.searchParams.get('request_id') || undefined,
+        client_request_id: url.searchParams.get('client_request_id') || undefined,
+        user_id: url.searchParams.get('user_id') || undefined,
+        account_id: url.searchParams.get('account_id') || undefined,
+        platform: url.searchParams.get('platform') || undefined,
+        model: url.searchParams.get('model') || undefined,
+        q: url.searchParams.get('q') || undefined
+      }
+      const result = await targetClient.listSystemLogs(target, params)
       json(res, result.ok ? 200 : 502, result)
       return
     }

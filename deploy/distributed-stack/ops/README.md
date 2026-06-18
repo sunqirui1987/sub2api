@@ -17,6 +17,12 @@ npm start
 http://127.0.0.1:3010/admin/ops
 ```
 
+独立日志面板：
+
+```text
+http://127.0.0.1:3010/admin/ops/logs
+```
+
 ## Linux 安装 Node.js / npm / pm2
 
 在 Linux 服务器上可以直接使用仓库里的安装脚本：
@@ -128,6 +134,9 @@ vi config/auth.json
 | 路径 | 说明 |
 | --- | --- |
 | `GET /admin/ops` | 公开运维页面 |
+| `GET /admin/ops/logs` | 独立日志面板，支持请求日志、请求错误、上游错误和系统日志 |
 | `GET /admin/ops/api/targets` | 公开服务器列表，不包含 API Key |
 | `GET /admin/ops/api/snapshot?target=<id>&time_range=1h` | 指定服务器聚合快照 |
+| `GET /admin/ops/api/details?target=<id>&type=requests` | 指定服务器请求/错误明细代理 |
+| `GET /admin/ops/api/system-logs?target=<id>&time_range=1h` | 指定服务器系统日志代理 |
 | `GET /healthz` | Ops Server 自身健康检查 |

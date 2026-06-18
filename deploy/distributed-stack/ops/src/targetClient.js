@@ -91,6 +91,9 @@ function createTargetClient(config) {
       }
       return getJson(target, paths[type] || paths['request-errors'])
     },
+    listSystemLogs(target, params) {
+      return getJson(target, '/api/v1/admin/ops/system-logs', params)
+    },
     getHealth(target) {
       return getJson(target, target.healthPath || '/healthz')
     }
