@@ -140,3 +140,23 @@ vi config/auth.json
 | `GET /admin/ops/api/details?target=<id>&type=requests` | 指定服务器请求/错误明细代理 |
 | `GET /admin/ops/api/system-logs?target=<id>&time_range=1h` | 指定服务器系统日志代理 |
 | `GET /healthz` | Ops Server 自身健康检查 |
+
+### 日志面板查询
+
+`/admin/ops/logs` 支持请求日志、请求错误、上游错误和系统日志四类视图。常用筛选参数会同步到 URL：
+
+| 参数 | 说明 |
+| --- | --- |
+| `target` | 目标服务器 ID |
+| `type` | `requests`、`errors`、`upstream`、`system` |
+| `time_range` | 相对时间范围，例如 `5m`、`30m`、`1h`、`6h`、`24h`、`7d`、`30d` |
+| `start_time` / `end_time` | 可选绝对时间，RFC3339 格式；填写后优先于 `time_range` |
+| `level` / `component` | 日志级别和组件，例如 `error`、`http.access` |
+| `request_id` / `client_request_id` | 请求追踪 ID |
+| `user_id` / `account_id` | 用户和账号筛选 |
+| `platform` / `model` | 平台和模型筛选 |
+| `q` | 关键词，匹配消息、请求 ID 等目标后端支持的字段 |
+| `status_codes` / `view` | 错误类日志的状态码和视图筛选 |
+| `page` / `page_size` | 分页参数 |
+
+表格会完整显示 `request_id`、`client_request_id`、IP、User-Agent 等排障字段。成功请求日志的 IP/User-Agent 取决于目标 Sub2API 后端 `/api/v1/admin/ops/requests` 是否返回这些字段；如果目标后端未返回，页面显示 `-`，不会在 Ops Server 中伪造。系统日志会优先从顶层字段和 `extra.client_ip`、`extra.request_user_agent` 等字段中提取展示。

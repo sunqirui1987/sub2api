@@ -119,19 +119,27 @@ const server = http.createServer(async (req, res) => {
       const type = url.searchParams.get('type') || 'requests'
       const params = {
         time_range: url.searchParams.get('time_range') || '1h',
+        start_time: url.searchParams.get('start_time') || undefined,
+        end_time: url.searchParams.get('end_time') || undefined,
         page: String(clampInteger(url.searchParams.get('page'), 1, 1, 100000)),
         page_size: String(clampInteger(url.searchParams.get('page_size'), 100, 20, 500)),
         sort: url.searchParams.get('sort') || 'created_at_desc',
         kind: url.searchParams.get('kind') || undefined,
         view: url.searchParams.get('view') || undefined,
         status: url.searchParams.get('status') || undefined,
-        view: url.searchParams.get('view') || undefined,
         status_codes: url.searchParams.get('status_codes') || url.searchParams.get('status_code') || undefined,
         phase: url.searchParams.get('phase') || undefined,
         error_owner: url.searchParams.get('error_owner') || undefined,
+        level: url.searchParams.get('level') || undefined,
+        component: url.searchParams.get('component') || undefined,
         platform: url.searchParams.get('platform') || undefined,
         model: url.searchParams.get('model') || undefined,
         request_id: url.searchParams.get('request_id') || undefined,
+        client_request_id: url.searchParams.get('client_request_id') || undefined,
+        user_id: url.searchParams.get('user_id') || undefined,
+        api_key_id: url.searchParams.get('api_key_id') || undefined,
+        account_id: url.searchParams.get('account_id') || undefined,
+        group_id: url.searchParams.get('group_id') || undefined,
         q: url.searchParams.get('q') || url.searchParams.get('keyword') || undefined
       }
       const result = await targetClient.listDetails(target, type, params)
@@ -143,6 +151,8 @@ const server = http.createServer(async (req, res) => {
       const target = config.targets.find(item => item.id === url.searchParams.get('target')) || config.targets[0]
       const params = {
         time_range: url.searchParams.get('time_range') || '1h',
+        start_time: url.searchParams.get('start_time') || undefined,
+        end_time: url.searchParams.get('end_time') || undefined,
         page: String(clampInteger(url.searchParams.get('page'), 1, 1, 100000)),
         page_size: String(clampInteger(url.searchParams.get('page_size'), 100, 20, 200)),
         level: url.searchParams.get('level') || undefined,

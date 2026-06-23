@@ -683,6 +683,7 @@ function renderLogsPage(config) {
     .select { min-width: 190px; padding: 0 12px; }
     .input { width: 170px; padding: 0 12px; }
     .input.keyword { width: 260px; }
+    .input.datetime { min-width: 210px; }
     .input.short { width: 108px; }
     .action-btn { display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; cursor: pointer; text-decoration: none; background: #f5f7fa; }
     .action-btn.primary { color: #2f62dc; background: var(--blue-soft); border-color: transparent; }
@@ -697,14 +698,33 @@ function renderLogsPage(config) {
     body[data-log-type="errors"] .filter-only-error, body[data-log-type="upstream"] .filter-only-error { display: grid; }
     body[data-log-type="system"] .filter-only-system { display: grid; }
     .summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 4px 10px; color: #647084; font-size: 13px; font-weight: 850; }
-    .table-wrap { border: 1px solid var(--line); border-radius: 16px; overflow: auto; background: #fff; }
-    table { width: 100%; border-collapse: collapse; min-width: 1260px; }
+    .table-wrap { border: 0; border-radius: 0; overflow: visible; background: transparent; }
+    table { width: 100%; border-collapse: collapse; min-width: 1720px; }
     th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; color: #647084; font-size: 13px; font-weight: 750; vertical-align: top; }
     th { position: sticky; top: 0; z-index: 1; background: #f8fafc; color: #7b8494; font-size: 12px; font-weight: 950; }
     tr:last-child td { border-bottom: 0; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
     .truncate { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cell-long { min-width: 220px; max-width: 360px; white-space: normal; word-break: break-all; }
+    .cell-wide { min-width: 300px; max-width: 520px; white-space: normal; word-break: break-word; }
+    .cell-ip { min-width: 130px; white-space: normal; word-break: break-word; }
+    .nowrap { white-space: nowrap; }
     .message { max-width: 440px; white-space: normal; word-break: break-word; }
+    .list-head { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 4px 10px; color: #7b8494; font-size: 12px; font-weight: 900; }
+    .head-chip { padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; background: #fff; }
+    .log-list { display: grid; gap: 12px; }
+    .log-card { border: 1px solid var(--line); border-radius: 16px; background: #fff; overflow: hidden; }
+    .log-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; background: #f8fafc; border-bottom: 1px solid var(--line); }
+    .log-card-title { min-width: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: #334155; font-size: 13px; font-weight: 950; }
+    .log-card-title .mono { word-break: break-all; }
+    .log-fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
+    .log-field { min-width: 0; padding: 12px 16px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .log-field:nth-child(4n) { border-right: 0; }
+    .log-field.full { grid-column: 1 / -1; border-right: 0; }
+    .log-label { margin-bottom: 5px; color: #8a94a6; font-size: 11px; font-weight: 950; text-transform: uppercase; }
+    .log-value { color: #647084; font-size: 13px; font-weight: 800; line-height: 1.45; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+    .log-value.mono { word-break: break-all; }
+    .log-field.full .log-value { white-space: pre-wrap; }
     .badge { display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 950; }
     .badge.ok { color: var(--green); background: #e7f7ed; }
     .badge.error { color: var(--red); background: #fde8e8; }
@@ -724,7 +744,9 @@ function renderLogsPage(config) {
     .modal-close { width: 46px; height: 46px; border: 2px solid #3167c9; border-radius: 15px; background: #f8fafc; color: #475569; font-size: 30px; line-height: 1; cursor: pointer; }
     .modal-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 28px; color: #647084; font-size: 13px; font-weight: 850; }
     .pre { margin: 0 28px 28px; padding: 18px; max-height: 62vh; overflow: auto; border: 1px solid var(--line); border-radius: 14px; background: #0f172a; color: #dbeafe; font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; white-space: pre-wrap; word-break: break-word; }
+    @media (max-width: 1320px) { .log-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } .log-field:nth-child(4n) { border-right: 1px solid var(--line); } .log-field:nth-child(2n) { border-right: 0; } }
     @media (max-width: 1120px) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .filters .wide { grid-column: span 2; } }
+    @media (max-width: 860px) { .log-card-top { align-items: flex-start; flex-direction: column; } .log-fields { grid-template-columns: 1fr; } .log-field, .log-field:nth-child(2n), .log-field:nth-child(4n) { border-right: 0; } .row-actions { justify-content: flex-start; } }
     @media (max-width: 760px) { .shell { width: min(100vw - 20px, 740px); } .heading { align-items: flex-start; flex-direction: column; } .controls, .select, .input, .action-btn { width: 100%; } .filters { grid-template-columns: 1fr; } .filters .wide { grid-column: span 1; } }
   </style>
 </head>
@@ -748,22 +770,24 @@ function renderLogsPage(config) {
       </nav>
       <section class="filters">
         <label>时间范围<select class="select" id="timeRange"><option value="5m">近5分钟</option><option value="30m">近30分钟</option><option value="1h" selected>近1小时</option><option value="6h">近6小时</option><option value="24h">近24小时</option><option value="7d">近7天</option><option value="30d">近30天</option></select></label>
-        <label class="wide">关键字<input class="input keyword" id="filterQ" type="search" placeholder="request_id / client_request_id / message"></label>
+        <label>开始时间（可选）<input class="input datetime" id="filterStartTime" type="datetime-local"></label>
+        <label>结束时间（可选）<input class="input datetime" id="filterEndTime" type="datetime-local"></label>
+        <label>级别<select class="select" id="filterLevel"><option value="">全部</option><option value="debug">debug</option><option value="info">info</option><option value="warn">warn</option><option value="error">error</option></select></label>
+        <label>组件<input class="input" id="filterComponent" type="search" placeholder="如 http.access"></label>
+        <label>request_id<input class="input" id="filterRequestID" type="search"></label>
+        <label>client_request_id<input class="input" id="filterClientRequestID" type="search"></label>
+        <label>user_id<input class="input" id="filterUserID" inputmode="numeric"></label>
+        <label>account_id<input class="input" id="filterAccountID" inputmode="numeric"></label>
         <label>平台<input class="input" id="filterPlatform" type="search" placeholder="openai"></label>
         <label>模型<input class="input" id="filterModel" type="search" placeholder="gpt-5.5"></label>
+        <label class="wide">关键字<input class="input keyword" id="filterQ" type="search" placeholder="消息/request_id"></label>
         <label class="filter-only-error">状态码<input class="input short" id="filterStatusCodes" inputmode="numeric" placeholder="400,503"></label>
         <label class="filter-only-error">视图<select class="select" id="filterView"><option value="errors">错误</option><option value="excluded">排除项</option><option value="all">全部</option></select></label>
-        <label class="filter-only-system">级别<select class="select" id="filterLevel"><option value="">全部</option><option value="debug">debug</option><option value="info">info</option><option value="warn">warn</option><option value="error">error</option></select></label>
-        <label class="filter-only-system">组件<input class="input" id="filterComponent" type="search" placeholder="http.access"></label>
-        <label>request_id<input class="input" id="filterRequestID" type="search"></label>
-        <label class="filter-only-system">client_request_id<input class="input" id="filterClientRequestID" type="search"></label>
-        <label>account_id<input class="input short" id="filterAccountID" inputmode="numeric"></label>
-        <label>user_id<input class="input short" id="filterUserID" inputmode="numeric"></label>
         <label>每页<select class="select" id="pageSize"><option value="50">50 条</option><option value="100" selected>100 条</option><option value="200">200 条</option><option value="500">500 条</option></select></label>
         <div class="actions"><button class="action-btn" id="resetBtn" type="button">重置</button><button class="action-btn primary" id="searchBtn" type="button">查询</button></div>
       </section>
       <div class="summary"><span id="summaryText">准备加载</span><span id="pageText">第 1 页</span></div>
-      <div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table><div class="empty" id="empty" hidden>暂无日志</div></div>
+      <div class="table-wrap"><div class="list-head" id="tableHead"></div><div class="log-list" id="tableBody"></div><div class="empty" id="empty" hidden>暂无日志</div></div>
       <div class="pager"><button class="action-btn" id="prevPage" type="button">上一页</button><button class="action-btn" id="nextPage" type="button">下一页</button></div>
     </section>
   </main>
@@ -789,9 +813,47 @@ function renderLogsPage(config) {
     function esc(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]); }
     function set(id, value) { const el = $(id); if (el) el.textContent = value; }
     function selectedTarget() { return targets.find(target => target.id === $('targetSelect')?.value) || targets[0]; }
-    function rowValue(row, keys, fallback = '-') { for (const key of keys) { const value = row && row[key]; if (value !== undefined && value !== null && value !== '') return value; } return fallback; }
+    function readPath(source, path) {
+      if (!source || !path) return undefined;
+      return String(path).split('.').reduce((value, key) => (value && typeof value === 'object' ? value[key] : undefined), source);
+    }
+    function rowValue(row, keys, fallback = '-') {
+      for (const key of keys) {
+        const value = key.includes('.') ? readPath(row, key) : row && row[key];
+        if (value !== undefined && value !== null && value !== '') return value;
+      }
+      return fallback;
+    }
+    function extraValue(row, keys, fallback = '-') {
+      const extra = row && row.extra && typeof row.extra === 'object' ? row.extra : {};
+      return rowValue(extra, keys, fallback);
+    }
+    function requestIP(row) {
+      return rowValue(row, ['client_ip', 'ip', 'ip_address', 'request_client_ip', 'extra.client_ip', 'extra.ip', 'extra.ip_address', 'extra.request_client_ip'], '-');
+    }
+    function userAgent(row) {
+      return rowValue(row, ['user_agent', 'request_user_agent', 'extra.user_agent', 'extra.request_user_agent'], '-');
+    }
+    function clientRequestID(row) {
+      return rowValue(row, ['client_request_id', 'extra.client_request_id'], '-');
+    }
+    function requestID(row) {
+      return rowValue(row, ['request_id', 'upstream_request_id', 'id', 'extra.request_id'], '-');
+    }
     function shortID(value) { const text = String(value || '-'); return text.length > 34 ? text.slice(0, 30) + '...' : text; }
     function formatTime(value) { if (!value) return '-'; const d = new Date(typeof value === 'number' ? value : value); return Number.isFinite(d.getTime()) ? fmt.format(d).replaceAll('/', '-') : String(value); }
+    function toDateTimeLocal(value) {
+      if (!value) return '';
+      const d = new Date(value);
+      if (!Number.isFinite(d.getTime())) return '';
+      const pad = number => String(number).padStart(2, '0');
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    function toRFC3339FromLocal(value) {
+      if (!value) return '';
+      const d = new Date(value);
+      return Number.isFinite(d.getTime()) ? d.toISOString() : '';
+    }
     function pretty(value) { if (value === undefined || value === null || value === '') return '-'; if (typeof value === 'string') { try { return JSON.stringify(JSON.parse(value), null, 2); } catch { return value; } } try { return JSON.stringify(value, null, 2); } catch { return String(value); } }
     function copyText(text) {
       const value = String(text || '');
@@ -828,23 +890,20 @@ function renderLogsPage(config) {
     function systemDetail(row) {
       const extra = row.extra && typeof row.extra === 'object' ? row.extra : {};
       const parts = [row.message].filter(Boolean);
-      ['status_code', 'latency_ms', 'method', 'path', 'client_ip', 'protocol', 'err', 'error'].forEach(key => {
+      ['method', 'path', 'status_code', 'latency_ms', 'client_ip', 'ip', 'ip_address', 'user_agent', 'request_user_agent', 'protocol', 'err', 'error'].forEach(key => {
         const value = extra[key];
         if (value !== undefined && value !== null && value !== '') parts.push(key + '=' + value);
       });
       return parts.join('  ');
     }
     function rowSearchPayload(row) {
-      if (!row || typeof row !== 'object') return row || '';
-      const payload = {};
-      ['id', 'created_at', 'level', 'component', 'message', 'request_id', 'client_request_id', 'platform', 'model', 'status_code', 'upstream_status_code', 'phase', 'error_owner', 'error_source', 'detail', 'error_message', 'response_body', 'upstream_errors', 'extra'].forEach(key => {
-        if (row[key] !== undefined && row[key] !== null && row[key] !== '') payload[key] = row[key];
-      });
-      return Object.keys(payload).length ? payload : row;
+      return row || '';
     }
     function readFilters() {
       return {
         timeRange: $('timeRange')?.value || '1h',
+        startTime: $('filterStartTime')?.value || '',
+        endTime: $('filterEndTime')?.value || '',
         q: $('filterQ')?.value.trim() || '',
         platform: $('filterPlatform')?.value.trim() || '',
         model: $('filterModel')?.value.trim() || '',
@@ -860,6 +919,8 @@ function renderLogsPage(config) {
     }
     function writeFilters(filters) {
       if ($('timeRange')) $('timeRange').value = filters.timeRange || '1h';
+      if ($('filterStartTime')) $('filterStartTime').value = filters.startTime || '';
+      if ($('filterEndTime')) $('filterEndTime').value = filters.endTime || '';
       if ($('filterQ')) $('filterQ').value = filters.q || '';
       if ($('filterPlatform')) $('filterPlatform').value = filters.platform || '';
       if ($('filterModel')) $('filterModel').value = filters.model || '';
@@ -881,9 +942,9 @@ function renderLogsPage(config) {
       params.set('type', state.type);
       if (state.page > 1) params.set('page', String(state.page));
       if (state.pageSize !== 100) params.set('page_size', String(state.pageSize));
-      const map = { timeRange: 'time_range', q: 'q', platform: 'platform', model: 'model', statusCodes: 'status_codes', view: 'view', level: 'level', component: 'component', requestID: 'request_id', clientRequestID: 'client_request_id', accountID: 'account_id', userID: 'user_id' };
+      const map = { timeRange: 'time_range', startTime: 'start_time', endTime: 'end_time', q: 'q', platform: 'platform', model: 'model', statusCodes: 'status_codes', view: 'view', level: 'level', component: 'component', requestID: 'request_id', clientRequestID: 'client_request_id', accountID: 'account_id', userID: 'user_id' };
       Object.entries(map).forEach(([key, param]) => {
-        const value = filters[key];
+        const value = key === 'startTime' || key === 'endTime' ? toRFC3339FromLocal(filters[key]) : filters[key];
         if (value && !(key === 'timeRange' && value === '1h') && !(key === 'view' && value === 'errors')) params.set(param, value);
       });
       history.replaceState(null, '', location.pathname + '?' + params.toString());
@@ -896,6 +957,8 @@ function renderLogsPage(config) {
       state.pageSize = Math.min(500, Math.max(20, Number.parseInt(params.get('page_size') || '100', 10) || 100));
       writeFilters({
         timeRange: params.get('time_range') || '1h',
+        startTime: toDateTimeLocal(params.get('start_time') || ''),
+        endTime: toDateTimeLocal(params.get('end_time') || ''),
         q: params.get('q') || '',
         platform: params.get('platform') || '',
         model: params.get('model') || '',
@@ -941,47 +1004,117 @@ function renderLogsPage(config) {
         page: String(state.page),
         page_size: String(state.pageSize)
       });
+      const startTime = toRFC3339FromLocal(filters.startTime);
+      const endTime = toRFC3339FromLocal(filters.endTime);
+      if (startTime) query.set('start_time', startTime);
+      if (endTime) query.set('end_time', endTime);
       if (filters.q) query.set('q', filters.q);
       if (filters.platform) query.set('platform', filters.platform);
       if (filters.model) query.set('model', filters.model);
       if (filters.requestID) query.set('request_id', filters.requestID);
+      if (filters.clientRequestID) query.set('client_request_id', filters.clientRequestID);
       if (filters.accountID) query.set('account_id', filters.accountID);
       if (filters.userID) query.set('user_id', filters.userID);
-      if (state.type === 'system') {
-        if (filters.level) query.set('level', filters.level);
-        if (filters.component) query.set('component', filters.component);
-        if (filters.clientRequestID) query.set('client_request_id', filters.clientRequestID);
-      } else {
+      if (filters.component) query.set('component', filters.component);
+      if (filters.level) query.set('level', filters.level);
+      if (state.type !== 'system') {
         if (filters.statusCodes) query.set('status_codes', filters.statusCodes);
         if (state.type !== 'requests' && filters.view) query.set('view', filters.view);
       }
       return query;
     }
+    function field(label, value, className = '') {
+      const valueClass = className.includes('mono') ? 'log-value mono' : 'log-value';
+      return '<div class="log-field ' + className + '"><div class="log-label">' + esc(label) + '</div><div class="' + valueClass + '">' + esc(value) + '</div></div>';
+    }
+    function fieldHtml(label, html, className = '') {
+      return '<div class="log-field ' + className + '"><div class="log-label">' + esc(label) + '</div><div class="log-value">' + html + '</div></div>';
+    }
+    function rowActions(index, mode) {
+      const detail = mode === 'error'
+        ? '<button class="mini-btn error" data-error-row="' + index + '" type="button">错误</button>'
+        : '<button class="mini-btn" data-open-row="' + index + '" type="button">详情</button>';
+      return '<div class="row-actions"><button class="mini-btn" data-copy-row="' + index + '" type="button">复制</button>' + detail + '</div>';
+    }
+    function logCard(titleHtml, fields, index, mode = 'detail') {
+      return '<article class="log-card"><div class="log-card-top"><div class="log-card-title">' + titleHtml + '</div>' + rowActions(index, mode) + '</div><div class="log-fields">' + fields.join('') + '</div></article>';
+    }
     function headersForType() {
-      if (state.type === 'system') return ['时间', '级别', '组件', '请求ID', '平台', '模型', '内容', '操作'];
-      if (state.type === 'upstream') return ['时间', '类型', '端点', '平台', '模型', '分组', '用户', '账号', '状态码', '响应内容', '操作'];
-      if (state.type === 'errors') return ['时间', '阶段', '端点', '平台', '模型', '分组', '用户', 'API KEY', '账号', '状态码', '响应内容', '操作'];
-      return ['时间', '类型', '平台', '模型', '耗时', '状态码', '请求ID', '用户', '账号', '操作'];
+      if (state.type === 'system') return ['时间', '级别', '组件', 'request_id', 'client_request_id', '平台', '模型', '状态', 'IP', 'User-Agent', '内容', '操作'];
+      if (state.type === 'upstream') return ['时间', '类型', '端点', 'request_id', 'client_request_id', '平台', '模型', '分组', '用户', '账号', 'IP', '状态码', '响应内容', '操作'];
+      if (state.type === 'errors') return ['时间', '阶段', '端点', 'request_id', 'client_request_id', '平台', '模型', '分组', '用户', 'API KEY', '账号', 'IP', '状态码', '响应内容', '操作'];
+      return ['时间', '类型', '平台', '模型', '耗时', '状态码', 'request_id', 'client_request_id', 'IP', 'User-Agent', '用户', '账号', '操作'];
     }
     function renderRows() {
       const head = $('tableHead');
       const body = $('tableBody');
       const empty = $('empty');
       if (!head || !body || !empty) return;
-      head.innerHTML = '<tr>' + headersForType().map(item => '<th>' + esc(item) + '</th>').join('') + '</tr>';
+      head.innerHTML = headersForType().filter(item => item !== '操作').map(item => '<span class="head-chip">' + esc(item) + '</span>').join('');
       empty.hidden = rows.length > 0;
       if (state.type === 'system') {
-        body.innerHTML = rows.map((row, index) => '<tr><td>' + esc(formatTime(row.created_at)) + '</td><td>' + levelBadge(row.level) + '</td><td>' + esc(row.component || '-') + '</td><td class="mono truncate" title="' + esc(row.request_id || row.client_request_id || '') + '">' + esc(shortID(row.request_id || row.client_request_id)) + '</td><td>' + esc(row.platform || '-') + '</td><td class="truncate" title="' + esc(row.model || '') + '">' + esc(row.model || '-') + '</td><td class="message">' + esc(systemDetail(row)) + '</td><td><div class="row-actions"><button class="mini-btn" data-copy-row="' + index + '" type="button">复制</button><button class="mini-btn" data-open-row="' + index + '" type="button">详情</button></div></td></tr>').join('');
+        body.innerHTML = rows.map((row, index) => {
+          const status = rowValue(row, ['status_code', 'extra.status_code'], extraValue(row, ['status'], '-'));
+          const title = '<span>' + esc(formatTime(row.created_at)) + '</span>' + levelBadge(row.level) + '<span>' + esc(row.component || '-') + '</span>';
+          return logCard(title, [
+            field('request_id', requestID(row), 'mono'),
+            field('client_request_id', clientRequestID(row), 'mono'),
+            field('平台', row.platform || '-'),
+            field('模型', row.model || '-'),
+            field('状态', status),
+            field('IP', requestIP(row)),
+            field('User-Agent', userAgent(row), 'full'),
+            field('内容', systemDetail(row), 'full')
+          ], index);
+        }).join('');
       } else if (state.type === 'upstream') {
-        body.innerHTML = rows.map((row, index) => '<tr><td>' + esc(formatTime(rowValue(row, ['created_at', 'at', 'at_unix_ms']))) + '</td><td>' + esc(rowValue(row, ['phase', 'kind'])) + '</td><td class="mono truncate" title="' + esc(rowValue(row, ['upstream_endpoint', 'inbound_endpoint'], '')) + '">' + esc(rowValue(row, ['upstream_endpoint', 'inbound_endpoint'])) + '</td><td>' + esc(rowValue(row, ['platform'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['upstream_model', 'requested_model', 'model'], '')) + '">' + esc(rowValue(row, ['upstream_model', 'requested_model', 'model'])) + '</td><td>' + esc(rowValue(row, ['group_name', 'group_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['user_email', 'user_id'], '')) + '">' + esc(rowValue(row, ['user_email', 'user_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['account_name', 'account_id'], '')) + '">' + esc(rowValue(row, ['account_name', 'account_id'])) + '</td><td>' + statusBadge(row) + '</td><td class="message">' + esc(rowValue(row, ['message', 'detail', 'error_message'])) + '</td><td><div class="row-actions"><button class="mini-btn" data-copy-row="' + index + '" type="button">复制</button><button class="mini-btn error" data-error-row="' + index + '" type="button">错误</button></div></td></tr>').join('');
+        body.innerHTML = rows.map((row, index) => {
+          const title = '<span>' + esc(formatTime(rowValue(row, ['created_at', 'at', 'at_unix_ms']))) + '</span>' + statusBadge(row) + '<span>' + esc(rowValue(row, ['phase', 'kind'])) + '</span>';
+          return logCard(title, [
+            field('端点', rowValue(row, ['upstream_endpoint', 'inbound_endpoint']), 'mono'),
+            field('request_id', requestID(row), 'mono'),
+            field('client_request_id', clientRequestID(row), 'mono'),
+            field('平台', rowValue(row, ['platform'])),
+            field('模型', rowValue(row, ['upstream_model', 'requested_model', 'model'])),
+            field('分组', rowValue(row, ['group_name', 'group_id'])),
+            field('用户', rowValue(row, ['user_email', 'user_id'])),
+            field('账号', rowValue(row, ['account_name', 'account_id'])),
+            field('IP', requestIP(row)),
+            field('响应内容', rowValue(row, ['message', 'detail', 'error_message']), 'full')
+          ], index, 'error');
+        }).join('');
       } else if (state.type === 'errors') {
-        body.innerHTML = rows.map((row, index) => '<tr><td>' + esc(formatTime(rowValue(row, ['created_at', 'at']))) + '</td><td>' + esc(rowValue(row, ['phase', 'error_owner'])) + '</td><td class="mono truncate" title="' + esc(rowValue(row, ['inbound_endpoint', 'upstream_endpoint'], '')) + '">' + esc(rowValue(row, ['inbound_endpoint', 'upstream_endpoint'])) + '</td><td>' + esc(rowValue(row, ['platform'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['requested_model', 'model', 'upstream_model'], '')) + '">' + esc(rowValue(row, ['requested_model', 'model', 'upstream_model'])) + '</td><td>' + esc(rowValue(row, ['group_name', 'group_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['user_email', 'user_id'], '')) + '">' + esc(rowValue(row, ['user_email', 'user_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['api_key_name', 'api_key_id'], '')) + '">' + esc(rowValue(row, ['api_key_name', 'api_key_id'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['account_name', 'account_id'], '')) + '">' + esc(rowValue(row, ['account_name', 'account_id'])) + '</td><td>' + statusBadge(row) + '</td><td class="message">' + esc(rowValue(row, ['message', 'detail', 'error_message'])) + '</td><td><div class="row-actions"><button class="mini-btn" data-copy-row="' + index + '" type="button">复制</button><button class="mini-btn error" data-error-row="' + index + '" type="button">错误</button></div></td></tr>').join('');
+        body.innerHTML = rows.map((row, index) => {
+          const title = '<span>' + esc(formatTime(rowValue(row, ['created_at', 'at']))) + '</span>' + statusBadge(row) + '<span>' + esc(rowValue(row, ['phase', 'error_owner'])) + '</span>';
+          return logCard(title, [
+            field('端点', rowValue(row, ['inbound_endpoint', 'upstream_endpoint']), 'mono'),
+            field('request_id', requestID(row), 'mono'),
+            field('client_request_id', clientRequestID(row), 'mono'),
+            field('平台', rowValue(row, ['platform'])),
+            field('模型', rowValue(row, ['requested_model', 'model', 'upstream_model'])),
+            field('分组', rowValue(row, ['group_name', 'group_id'])),
+            field('用户', rowValue(row, ['user_email', 'user_id'])),
+            field('API KEY', rowValue(row, ['api_key_name', 'api_key_id'])),
+            field('账号', rowValue(row, ['account_name', 'account_id'])),
+            field('IP', requestIP(row)),
+            field('响应内容', rowValue(row, ['message', 'detail', 'error_message']), 'full')
+          ], index, 'error');
+        }).join('');
       } else {
         body.innerHTML = rows.map((row, index) => {
           const code = rowValue(row, ['status_code'], '-');
           const isError = String(rowValue(row, ['kind'], '')).toLowerCase() === 'error' || Number(code) >= 400;
-          const requestID = rowValue(row, ['request_id', 'id'], '');
-          return '<tr><td>' + esc(formatTime(rowValue(row, ['created_at', 'at']))) + '</td><td><span class="badge ' + (isError ? 'error' : 'ok') + '">' + (isError ? '失败' : '成功') + '</span></td><td>' + esc(rowValue(row, ['platform'])) + '</td><td class="truncate" title="' + esc(rowValue(row, ['model', 'requested_model'], '')) + '">' + esc(rowValue(row, ['model', 'requested_model'])) + '</td><td>' + esc(rowValue(row, ['duration_ms'])) + '</td><td>' + esc(code) + '</td><td class="mono truncate" title="' + esc(requestID) + '">' + esc(shortID(requestID)) + '</td><td>' + esc(rowValue(row, ['user_id'])) + '</td><td>' + esc(rowValue(row, ['account_id'])) + '</td><td><div class="row-actions"><button class="mini-btn" data-copy-row="' + index + '" type="button">复制</button>' + (isError ? '<button class="mini-btn error" data-error-row="' + index + '" type="button">错误</button>' : '<button class="mini-btn" data-open-row="' + index + '" type="button">详情</button>') + '</div></td></tr>';
+          const title = '<span>' + esc(formatTime(rowValue(row, ['created_at', 'at']))) + '</span><span class="badge ' + (isError ? 'error' : 'ok') + '">' + (isError ? '失败' : '成功') + '</span><span>' + esc(rowValue(row, ['platform'])) + '</span><span>' + esc(rowValue(row, ['model', 'requested_model'])) + '</span>';
+          return logCard(title, [
+            field('耗时', rowValue(row, ['duration_ms'])),
+            field('状态码', code),
+            field('request_id', requestID(row), 'mono'),
+            field('client_request_id', clientRequestID(row), 'mono'),
+            field('IP', requestIP(row)),
+            field('User-Agent', userAgent(row), 'full'),
+            field('用户', rowValue(row, ['user_id'])),
+            field('账号', rowValue(row, ['account_id']))
+          ], index, isError ? 'error' : 'detail');
         }).join('');
       }
     }
@@ -1033,7 +1166,7 @@ function renderLogsPage(config) {
         } catch {}
       }
       currentDetailText = pretty(payload);
-      set('detailSummary', '请求ID：' + rowValue(row, ['request_id', 'client_request_id', 'upstream_request_id', 'id']));
+      set('detailSummary', 'request_id：' + requestID(row) + ' · client_request_id：' + clientRequestID(row));
       set('detailContent', currentDetailText);
       $('detailModal')?.classList.add('open');
     }
@@ -1050,14 +1183,14 @@ function renderLogsPage(config) {
     $('refreshBtn')?.addEventListener('click', () => loadLogs().catch(console.error));
     $('searchBtn')?.addEventListener('click', () => { state.page = 1; loadLogs().catch(console.error); });
     $('resetBtn')?.addEventListener('click', () => {
-      writeFilters({ timeRange: '1h', view: 'errors' });
+      writeFilters({ timeRange: '1h', startTime: '', endTime: '', view: 'errors' });
       state.page = 1;
       loadLogs().catch(console.error);
     });
     $('pageSize')?.addEventListener('change', () => { state.pageSize = Number($('pageSize').value || 100); state.page = 1; loadLogs().catch(console.error); });
     $('prevPage')?.addEventListener('click', () => { if (state.page <= 1) return; state.page -= 1; loadLogs().catch(console.error); });
     $('nextPage')?.addEventListener('click', () => { if (rows.length < state.pageSize && total <= state.page * state.pageSize) return; state.page += 1; loadLogs().catch(console.error); });
-    ['timeRange', 'filterQ', 'filterPlatform', 'filterModel', 'filterStatusCodes', 'filterView', 'filterLevel', 'filterComponent', 'filterRequestID', 'filterClientRequestID', 'filterAccountID', 'filterUserID'].forEach(id => $(id)?.addEventListener(id === 'timeRange' || id === 'filterView' || id === 'filterLevel' ? 'change' : 'input', scheduleReload));
+    ['timeRange', 'filterStartTime', 'filterEndTime', 'filterQ', 'filterPlatform', 'filterModel', 'filterStatusCodes', 'filterView', 'filterLevel', 'filterComponent', 'filterRequestID', 'filterClientRequestID', 'filterAccountID', 'filterUserID'].forEach(id => $(id)?.addEventListener(id === 'timeRange' || id === 'filterStartTime' || id === 'filterEndTime' || id === 'filterView' || id === 'filterLevel' ? 'change' : 'input', scheduleReload));
     document.addEventListener('click', event => {
       const copy = event.target.closest('[data-copy-row]');
       if (copy) {
