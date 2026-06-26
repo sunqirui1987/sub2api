@@ -72,48 +72,7 @@ docker compose --env-file .env stop redis
 docker compose --env-file .env start redis
 ```
 
-## 三、修改管理员密码
-
-`ADMIN_EMAIL` 和 `ADMIN_PASSWORD` 只用于首次初始化管理员用户。数据库里已经存在用户后，只改 `$HOME/sub2api-app/.env` 并重启 App，不会覆盖已有管理员密码。
-
-知道当前密码时，推荐通过应用接口修改：
-
-```bash
-cd deploy/distributed-stack
-
-sh deploy.sh admin-password \
-  --dir "$HOME/sub2api-app" \
-  --mode api \
-  --old-password "<当前密码>" \
-  --new-password "<新密码>"
-```
-
-忘记当前密码时，可以直接重置数据库里的管理员密码：
-
-```bash
-cd deploy/distributed-stack
-
-sh deploy.sh admin-password \
-  --dir "$HOME/sub2api-app" \
-  --mode db \
-  --new-password "<新密码>"
-```
-
-脚本会读取 App 部署目录中的 `.env`，使用其中的 `ADMIN_EMAIL` 和 `DATABASE_*` 连接数据库。修改成功后，脚本会同步更新 `.env` 中的 `ADMIN_PASSWORD`，方便后续运维记录。
-
-如果部署目录不是默认值，使用 `--dir` 指向真实 App 部署目录；如果管理员邮箱不是默认值，可以额外传 `--email`：
-
-```bash
-sh deploy.sh admin-password \
-  --dir "/data/sub2api-app" \
-  --email "admin@example.com" \
-  --mode db \
-  --new-password "<新密码>"
-```
-
-## 四、更新镜像并重启
-
-生产升级请优先按 [升级镜像与回滚手册](./readme_update.md) 执行，里面包含 PostgreSQL / Redis 备份、健康检查和回滚步骤。
+## 三、更新镜像并重启
 
 App 更新到新的镜像时，先修改 `$HOME/sub2api-app/.env` 里的 `SUB2API_IMAGE`，然后执行：
 
@@ -125,37 +84,9 @@ docker compose --env-file .env up -d
 docker compose --env-file .env logs -f sub2api
 ```
 
-完整步骤示例：
-
-```bash
-cd "$HOME/sub2api-app"
-
-# 1. 备份当前环境文件，便于回滚
-cp .env ".env.bak.$(date +%Y%m%d%H%M%S)"
-
-# 2. 修改为新镜像地址
-sed -i.bak 's#^SUB2API_IMAGE=.*#SUB2API_IMAGE="crpi-4p61yfj4kgj9iup9.cn-hangzhou.personal.cr.aliyuncs.com/lincanvas/sub2api:version-YYYYMMDDHHMMSS"#' .env
-
-# 3. 拉取并切换到新镜像
-docker compose --env-file .env pull
-docker compose --env-file .env up -d
-
-# 4. 查看状态和日志
-docker compose --env-file .env ps
-docker compose --env-file .env logs -f sub2api
-```
-
-如果新镜像异常，把 `SUB2API_IMAGE` 改回旧镜像地址，然后执行：
-
-```bash
-cd "$HOME/sub2api-app"
-docker compose --env-file .env up -d
-docker compose --env-file .env logs -f sub2api
-```
-
 PostgreSQL / Redis 通常不需要频繁更新基础镜像。更新前建议先备份数据。
 
-## 五、只删除容器，保留配置和数据
+## 四、只删除容器，保留配置和数据
 
 这些命令会停止并删除 compose 创建的容器和默认网络，但保留部署目录、`.env`、PostgreSQL 数据和 Redis 数据。
 
@@ -188,7 +119,7 @@ cd "$HOME/sub2api-postgres" && docker compose --env-file .env up -d
 cd "$HOME/sub2api-redis" && docker compose --env-file .env up -d
 ```
 
-## 六、彻底删除本项目 Docker 与本项目数据
+## 五、彻底删除本项目 Docker 与本项目数据
 
 危险：下面命令会删除 Sub2API 的容器、配置文件和本地数据目录。PostgreSQL 与 Redis 数据删除后无法恢复，除非你已经有备份。
 
@@ -233,7 +164,7 @@ docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep 'sub2api' | awk
 docker system prune -f
 ```
 
-## 七、删除当前机器上的所有 Docker 容器
+## 六、删除当前机器上的所有 Docker 容器
 
 危险：这会停止并删除当前机器上的所有容器，不只 Sub2API。
 
@@ -250,7 +181,7 @@ docker ps -aq | xargs -r docker stop
 docker ps -aq | xargs -r docker rm
 ```
 
-## 八、删除当前机器上的所有 Docker 数据
+## 七、删除当前机器上的所有 Docker 数据
 
 极度危险：这会删除当前机器上的所有容器、镜像、网络、构建缓存和未被容器使用的数据卷。不要在还有其他业务运行的机器上执行。
 
@@ -268,7 +199,7 @@ sudo rm -rf /var/lib/docker
 sudo systemctl start docker
 ```
 
-## 九、常见排查
+## 八、常见排查
 
 查看容器最近 200 行日志：
 
@@ -303,3 +234,4 @@ sh deploy.sh doctor \
   --app-host "<app-ip>" \
   --app-port 8080
 ```
+

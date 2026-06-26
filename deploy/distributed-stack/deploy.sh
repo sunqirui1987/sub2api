@@ -11,7 +11,6 @@ Sub2API 发布阶段入口
   sh deploy/distributed-stack/deploy.sh postgres [options]
   sh deploy/distributed-stack/deploy.sh redis [options]
   sh deploy/distributed-stack/deploy.sh app [options]
-  sh deploy/distributed-stack/deploy.sh admin-password [options]
   sh deploy/distributed-stack/deploy.sh doctor [options]
 EOF
 }
@@ -33,9 +32,6 @@ case "$ROLE" in
         ;;
     app|sub2api)
         exec bash "$SCRIPT_DIR/scripts/prepare-app.sh" "$@"
-        ;;
-    admin-password|reset-admin-password|password)
-        exec bash "$SCRIPT_DIR/scripts/reset-admin-password.sh" "$@"
         ;;
     doctor|check)
         exec bash "$SCRIPT_DIR/scripts/doctor.sh" "$@"

@@ -17,7 +17,7 @@ Sub2API 管理员在后台可以配置多个 Webhook，每个 Webhook 填写：
 | Webhook 地址 | 第三方提供的接收地址 |
 | Webhook 密钥 | 可选，用于 HMAC-SHA256 签名校验 |
 | 超时 | 请求超时时间，建议 5 秒 |
-| 通知规则 ID | 可选，多个规则 ID 用英文逗号分隔；留空表示接收所有启用通知的告警规则 |
+| 通知规则 | 可选，在后台弹窗中选择；不选择表示接收所有启用通知的告警规则 |
 
 ## 2. Sub2API 请求第三方
 
@@ -313,7 +313,61 @@ http.createServer((req, res) => {
 })
 ```
 
-## 8. 对接验收
+## 8. 公开运维页面 Node.js 服务
+
+仓库还提供了一个完全公开的 Node.js 运维页面服务：
+
+```text
+ops/
+```
+
+启动：
+
+```bash
+cd ops
+npm start
+```
+
+访问：
+
+```text
+http://<服务IP>:3010/admin/ops
+```
+
+这个服务不做登录校验，`/admin/ops`、`/admin/ops/api/targets` 和 `/admin/ops/api/snapshot` 都是公开接口。页面会展示选中 Sub2API 后端的运维指标，也会展示 Node Ops Server 自身的 CPU、内存、事件循环延迟和运行时长。
+
+默认配置两个可选服务器，管理员 API Key 直接写在 `ops/config/targets.json` 的 `apiKey` 字段里：
+
+| 名称 | 地址 |
+| --- | --- |
+| `qn-codex.tapsvc.com` | `https://qn-codex.tapsvc.com` |
+| `qn-codex.tapsvc.com:8002` | `https://qn-codex.tapsvc.com:8002` |
+
+`ops/config/targets.json` 已被 Git 忽略，不会进入提交。页面只会拿到服务器名称和地址，管理员 API Key 只保存在 Node 进程里，用于服务端请求 Sub2API 管理接口。
+
+可选配置：
+
+| 环境变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `HOST` | `0.0.0.0` | 监听地址 |
+| `PORT` | `3010` | 监听端口 |
+| `PAGE_PATH` | `/admin/ops` | 页面路径 |
+| `REFRESH_SECONDS` | `5` | 页面自动刷新间隔 |
+| `SERVICE_NAME` | `Sub2API Ops` | 页面显示的服务名 |
+| `TARGET_TIMEOUT_MS` | `8000` | 拉取单个 Sub2API 后端指标的超时时间 |
+| `TARGETS_FILE` | `ops/config/targets.json` | 服务器列表配置文件 |
+| `OPS_TARGETS_JSON` | 空 | 自定义服务器列表 JSON；配置后会覆盖默认两个服务器 |
+
+自定义服务器示例：
+
+```json
+[
+  {"id":"prod","name":"prod","baseUrl":"https://example.com","apiKey":"<admin-api-key>"},
+  {"id":"canary","name":"canary","baseUrl":"https://example.com:8002","apiKey":"<admin-api-key>"}
+]
+```
+
+## 9. 对接验收
 
 1. 第三方服务能被 Sub2API 访问。
 2. Sub2API 后台点击“测试通知”。

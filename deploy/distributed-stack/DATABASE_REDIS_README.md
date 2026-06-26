@@ -381,18 +381,7 @@ curl -fsS -X PUT "$APP_URL/api/v1/user/password" \
 
 优先使用系统的“忘记密码”功能，但它依赖邮件和密码重置配置已经正确开启。
 
-如果邮件重置不可用，不要指望修改 `ADMIN_PASSWORD` 后重启覆盖旧密码。可以使用部署目录里的脚本重置：
-
-```bash
-cd deploy/distributed-stack
-
-sh deploy.sh admin-password \
-  --dir "$HOME/sub2api-app" \
-  --mode db \
-  --new-password "<新密码>"
-```
-
-脚本会读取 App `.env` 中的数据库连接信息，更新 `users.password_hash`，并同步更新 `.env` 中的 `ADMIN_PASSWORD` 作为运维记录。直接改库前务必先备份 PostgreSQL。
+如果邮件重置不可用，不要指望修改 `ADMIN_PASSWORD` 后重启覆盖旧密码。需要在数据库中更新 `users.password_hash` 为新的 bcrypt hash，或由研发提供一次性重置工具。直接改库前务必先备份 PostgreSQL。
 
 ## App 侧检查
 
