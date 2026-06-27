@@ -1,0 +1,15 @@
+{
+  "name": "sub2api-status-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sub2API scheduler status service",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/*.js test/*.test.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

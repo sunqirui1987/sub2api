@@ -1,0 +1,6 @@
+.env
+*.env
+config/auth.json
+config/targets.json
+*.log
+*.tmp

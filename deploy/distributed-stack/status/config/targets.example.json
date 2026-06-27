@@ -1,0 +1,14 @@
+[
+  {
+    "id": "sub2apia",
+    "name": "Sub2API A",
+    "baseUrl": "http://10.0.0.21:8080",
+    "authKey": "<admin-ops-auth-key>"
+  },
+  {
+    "id": "sub2apib",
+    "name": "Sub2API B",
+    "baseUrl": "http://10.0.0.22:8080",
+    "authKey": "<admin-ops-auth-key>"
+  }
+]
