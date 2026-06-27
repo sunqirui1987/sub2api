@@ -21,7 +21,7 @@ $HOME/sub2api-app/docker-compose.yml
 新镜像：
 
 ```text
-crpi-4p61yfj4kgj9iup9.cn-hangzhou.personal.cr.aliyuncs.com/lincanvas/sub2api:version-20260616115443
+crpi-4p61yfj4kgj9iup9.cn-hangzhou.personal.cr.aliyuncs.com/lincanvas/sub2api:version-20260627090225
 ```
 
 你当前线上旧镜像示例：
@@ -117,7 +117,7 @@ ls -lh "$BACKUP_ROOT"
 设置新镜像变量：
 
 ```bash
-export NEW_IMAGE="crpi-4p61yfj4kgj9iup9.cn-hangzhou.personal.cr.aliyuncs.com/lincanvas/sub2api:version-20260616115443"
+export NEW_IMAGE="crpi-4p61yfj4kgj9iup9.cn-hangzhou.personal.cr.aliyuncs.com/lincanvas/sub2api:version-20260627090225"
 ```
 
 修改 App 部署目录里的镜像：
