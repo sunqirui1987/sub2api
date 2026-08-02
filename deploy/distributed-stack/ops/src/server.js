@@ -1,9 +1,10 @@
 const http = require('http')
 const { createSession, destroySession, isAuthenticated, verifyCredentials } = require('./auth')
 const { loadConfig } = require('./config')
+const { analyzeUpstreamErrors } = require('./errorAnalysis')
 const { json, html, nowIso } = require('./format')
 const { createLocalMetrics } = require('./localMetrics')
-const { renderLoginPage, renderLogsPage, renderPage } = require('./render')
+const { renderErrorsPage, renderLoginPage, renderLogsPage, renderPage } = require('./render')
 const { buildSnapshot } = require('./snapshot')
 const { createTargetClient } = require('./targetClient')
 
@@ -68,6 +69,15 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
+    if (req.method === 'GET' && (url.pathname === `${config.pagePath}/errors` || url.pathname === `${config.pagePath}/errors/`)) {
+      if (!isAuthenticated(req, config)) {
+        html(res, renderLoginPage(config, Boolean(url.searchParams.get('error'))))
+        return
+      }
+      html(res, renderErrorsPage(config))
+      return
+    }
+
     if (req.method === 'POST' && url.pathname === `${config.pagePath}/login`) {
       const form = await readForm(req)
       if (verifyCredentials(config, form.get('username'), form.get('password'))) {
@@ -110,6 +120,37 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === `${config.pagePath}/api/realtime`) {
       const target = config.targets.find(item => item.id === url.searchParams.get('target')) || config.targets[0]
       const result = await targetClient.getRealtimeTraffic(target, url.searchParams.get('window') || '1min')
+      json(res, result.ok ? 200 : 502, result)
+      return
+    }
+
+    if (req.method === 'GET' && url.pathname === `${config.pagePath}/api/error-distribution`) {
+      const target = config.targets.find(item => item.id === url.searchParams.get('target')) || config.targets[0]
+      const result = await targetClient.getErrorDistribution(target, url.searchParams.get('time_range') || '1h')
+      json(res, result.ok ? 200 : 502, result)
+      return
+    }
+
+    if (req.method === 'GET' && url.pathname === `${config.pagePath}/api/upstream-error-analysis`) {
+      const target = config.targets.find(item => item.id === url.searchParams.get('target')) || config.targets[0]
+      const result = await analyzeUpstreamErrors({
+        targetClient,
+        target,
+        timeRange: url.searchParams.get('time_range') || '1h',
+        startTime: url.searchParams.get('start_time') || undefined,
+        endTime: url.searchParams.get('end_time') || undefined,
+        pageSize: clampInteger(url.searchParams.get('page_size'), 500, 50, 500),
+        filters: {
+          view: url.searchParams.get('view') || 'errors',
+          phase: url.searchParams.get('phase') || 'upstream',
+          platform: url.searchParams.get('platform') || '',
+          model: url.searchParams.get('model') || '',
+          accountID: url.searchParams.get('account_id') || '',
+          errorClass: url.searchParams.get('error_class') || url.searchParams.get('internal_error_type') || '',
+          statusCodes: url.searchParams.get('status_codes') || url.searchParams.get('status_code') || '',
+          q: url.searchParams.get('q') || url.searchParams.get('keyword') || ''
+        }
+      })
       json(res, result.ok ? 200 : 502, result)
       return
     }

@@ -73,6 +73,9 @@ function createTargetClient(config) {
     getRealtimeTraffic(target, window) {
       return getJson(target, '/api/v1/admin/ops/realtime-traffic', { window: window || '1min' })
     },
+    getErrorDistribution(target, timeRange) {
+      return getJson(target, '/api/v1/admin/ops/dashboard/error-distribution', { time_range: timeRange || '1h', mode: 'auto' })
+    },
     listDetails(target, type, params) {
       const paths = {
         requests: '/api/v1/admin/ops/requests',

@@ -23,6 +23,12 @@ http://127.0.0.1:3010/admin/ops
 http://127.0.0.1:3010/admin/ops/logs
 ```
 
+上游错误分析页：
+
+```text
+http://127.0.0.1:3010/admin/ops/errors
+```
+
 ## Linux 安装 Node.js / npm / pm2
 
 在 Linux 服务器上可以直接使用仓库里的安装脚本：
@@ -135,11 +141,38 @@ vi config/auth.json
 | --- | --- |
 | `GET /admin/ops` | 公开运维页面 |
 | `GET /admin/ops/logs` | 独立日志面板，支持请求日志、请求错误、上游错误和系统日志 |
+| `GET /admin/ops/errors` | 上游错误分析页，按账号、错误类型、模型、账号-模型组合和错误消息指纹聚合 |
 | `GET /admin/ops/api/targets` | 公开服务器列表，不包含 API Key |
 | `GET /admin/ops/api/snapshot?target=<id>&time_range=1h` | 指定服务器聚合快照 |
+| `GET /admin/ops/api/error-distribution?target=<id>&time_range=1h` | 指定服务器按状态码聚合的错误分类占比 |
+| `GET /admin/ops/api/upstream-error-analysis?target=<id>&time_range=1h` | 指定服务器上游错误多维聚合分析 |
 | `GET /admin/ops/api/details?target=<id>&type=requests` | 指定服务器请求/错误明细代理 |
 | `GET /admin/ops/api/system-logs?target=<id>&time_range=1h` | 指定服务器系统日志代理 |
 | `GET /healthz` | Ops Server 自身健康检查 |
+
+### 上游错误分析
+
+`/admin/ops/errors` 会从目标后端的 `/api/v1/admin/ops/upstream-errors` 按页读取当前查询条件下的全部错误列表，并在 Ops Server 内做多维聚合。页面重点展示：
+
+| 维度 | 用途 |
+| --- | --- |
+| 账号与错误类型 | 找出哪个上游账号错误最集中，并展示账号请求数、请求错误数、上游错误数和错误率；支持按请求数、请求错误率、上游错误率、错误数、最近错误和风险排序 |
+| 账号错误率图表 | 用散点图观察“请求量”和“上游错误率”的关系，用 Top 柱图快速定位高风险账号，用于判断是否需要探针或降低调度权重 |
+| 账号 / 错误类型组合 | 定位“某个账号某类错误”是否特别集中 |
+| 按模型 | 找出哪个模型错误最集中 |
+| 账号 / 模型组合 | 定位“某个账号跑某个模型”是否特别容易失败 |
+| 错误消息指纹 | 将相似错误消息归一化，方便识别重复问题 |
+
+常用查询参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `target` | 目标服务器 ID |
+| `time_range` | 相对时间范围，例如 `5m`、`30m`、`1h`、`6h`、`24h`、`7d`、`30d` |
+| `account_id` / `model` / `platform` | 按账号、模型、平台收窄分析范围 |
+| `error_class` | Ops Server 内部错误类型筛选，支持中文标签或英文 key，例如 `上游过载`、`rate_limited`、`timeout` |
+| `status_codes` | 状态码筛选，例如 `429,529,500` |
+| `q` | 关键词，匹配目标后端支持的错误消息或请求 ID 字段 |
 
 ### 日志面板查询
 
