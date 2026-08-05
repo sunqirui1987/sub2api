@@ -97,6 +97,13 @@ function createTargetClient(config) {
     listSystemLogs(target, params) {
       return getJson(target, '/api/v1/admin/ops/system-logs', params)
     },
+    getAccount(target, id) {
+      const safeID = encodeURIComponent(String(id || ''))
+      return getJson(target, `/api/v1/admin/accounts/${safeID}`)
+    },
+    listProxies(target) {
+      return getJson(target, '/api/v1/admin/proxies/all', { with_count: 'true' })
+    },
     getHealth(target) {
       return getJson(target, target.healthPath || '/healthz')
     }

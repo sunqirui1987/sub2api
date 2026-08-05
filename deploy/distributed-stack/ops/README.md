@@ -141,35 +141,36 @@ vi config/auth.json
 | --- | --- |
 | `GET /admin/ops` | 公开运维页面 |
 | `GET /admin/ops/logs` | 独立日志面板，支持请求日志、请求错误、上游错误和系统日志 |
-| `GET /admin/ops/errors` | 上游错误分析页，按账号、错误类型、模型、账号-模型组合和错误消息指纹聚合 |
+| `GET /admin/ops/errors` | 全池上游错误分析页，按账号、代理出口、错误类型、模型、状态码和错误消息指纹聚合 |
 | `GET /admin/ops/api/targets` | 公开服务器列表，不包含 API Key |
 | `GET /admin/ops/api/snapshot?target=<id>&time_range=1h` | 指定服务器聚合快照 |
 | `GET /admin/ops/api/error-distribution?target=<id>&time_range=1h` | 指定服务器按状态码聚合的错误分类占比 |
-| `GET /admin/ops/api/upstream-error-analysis?target=<id>&time_range=1h` | 指定服务器上游错误多维聚合分析 |
+| `GET /admin/ops/api/upstream-error-analysis?time_range=1h` | 读取全部已配置池并返回上游错误多维聚合分析；保留 `target` 参数仅作旧链接兼容，不再限制分析范围 |
 | `GET /admin/ops/api/details?target=<id>&type=requests` | 指定服务器请求/错误明细代理 |
 | `GET /admin/ops/api/system-logs?target=<id>&time_range=1h` | 指定服务器系统日志代理 |
 | `GET /healthz` | Ops Server 自身健康检查 |
 
 ### 上游错误分析
 
-`/admin/ops/errors` 会从目标后端的 `/api/v1/admin/ops/upstream-errors` 按页读取当前查询条件下的全部错误列表，并在 Ops Server 内做多维聚合。页面重点展示：
+`/admin/ops/errors` 会并行读取所有已配置后端的 `/api/v1/admin/ops/upstream-errors`，逐页拉取当前时间范围内的全部错误样本，并在 Ops Server 内统一聚合。页面上的账号输入框支持邮箱、账号 ID 和出口 IP；分析按钮会显示运行中弹框，避免用户误以为页面无响应。页面重点展示：
 
 | 维度 | 用途 |
 | --- | --- |
-| 账号与错误类型 | 找出哪个上游账号错误最集中，并展示账号请求数、请求错误数、上游错误数和错误率；支持按请求数、请求错误率、上游错误率、错误数、最近错误和风险排序 |
-| 账号错误率图表 | 用散点图观察“请求量”和“上游错误率”的关系，用 Top 柱图快速定位高风险账号，用于判断是否需要探针或降低调度权重 |
-| 账号 / 错误类型组合 | 定位“某个账号某类错误”是否特别集中 |
-| 按模型 | 找出哪个模型错误最集中 |
-| 账号 / 模型组合 | 定位“某个账号跑某个模型”是否特别容易失败 |
+| 账号与出口 | 以“账号 + 代理出口”作为诊断粒度；同一账号经不同出口产生的错误会拆开统计，无法探测公网出口时标记为“代理未探测”，并保留配置地址 |
+| 请求与错误比例 | 同时展示请求数、请求错误数、上游错误事件数、请求错误率和上游错误率；错误事件可能包含重试，因此上游错误率允许超过 100% |
+| 错误分类 | 按权限/策略限制、请求参数错误、模型不可用、限流、上游过载、超时、网络错误等分类，支持定位账号级主因 |
+| 按模型与状态码 | 观察模型、HTTP 状态码对失败的影响，区分模型故障、配额限制和请求侧问题 |
+| 代理出口分类 | 汇总直连、代理出口 IP、代理未探测、代理不可用，并保留可用公网出口 IP 作为证据 |
 | 错误消息指纹 | 将相似错误消息归一化，方便识别重复问题 |
 
 常用查询参数：
 
 | 参数 | 说明 |
 | --- | --- |
-| `target` | 目标服务器 ID |
+| `target` | 旧链接兼容参数；错误分析页默认忽略并读取全部池 |
 | `time_range` | 相对时间范围，例如 `5m`、`30m`、`1h`、`6h`、`24h`、`7d`、`30d` |
-| `account_id` / `model` / `platform` | 按账号、模型、平台收窄分析范围 |
+| `account` | 账号输入框查询，支持邮箱、账号 ID 或代理出口 IP；`account_id` 仍兼容旧链接 |
+| `model` / `platform` | 按模型、平台收窄分析范围 |
 | `error_class` | Ops Server 内部错误类型筛选，支持中文标签或英文 key，例如 `上游过载`、`rate_limited`、`timeout` |
 | `status_codes` | 状态码筛选，例如 `429,529,500` |
 | `q` | 关键词，匹配目标后端支持的错误消息或请求 ID 字段 |

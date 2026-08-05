@@ -132,10 +132,9 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && url.pathname === `${config.pagePath}/api/upstream-error-analysis`) {
-      const target = config.targets.find(item => item.id === url.searchParams.get('target')) || config.targets[0]
       const result = await analyzeUpstreamErrors({
         targetClient,
-        target,
+        targets: config.targets,
         timeRange: url.searchParams.get('time_range') || '1h',
         startTime: url.searchParams.get('start_time') || undefined,
         endTime: url.searchParams.get('end_time') || undefined,
@@ -145,7 +144,7 @@ const server = http.createServer(async (req, res) => {
           phase: url.searchParams.get('phase') || 'upstream',
           platform: url.searchParams.get('platform') || '',
           model: url.searchParams.get('model') || '',
-          accountID: url.searchParams.get('account_id') || '',
+          accountQuery: url.searchParams.get('account') || url.searchParams.get('account_id') || '',
           errorClass: url.searchParams.get('error_class') || url.searchParams.get('internal_error_type') || '',
           statusCodes: url.searchParams.get('status_codes') || url.searchParams.get('status_code') || '',
           q: url.searchParams.get('q') || url.searchParams.get('keyword') || ''

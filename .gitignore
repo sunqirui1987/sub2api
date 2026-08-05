@@ -132,6 +132,8 @@ docs/*
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
 !docs/ASYNC_IMAGE_TASKS.md
+!docs/PRD_ACCOUNT_OVERLOAD_CONTROL_CN.md
+!docs/PRD_OPS_ERROR_ANALYSIS_CN.md
 !docs/legal/
 !docs/legal/*.md
 .serena/
@@ -139,3 +141,5 @@ docs/*
 frontend/coverage/
 aicodex
 output/
+docs/PRD_ACCOUNT_OVERLOAD_CONTROL_CN.md
+docs/PRD_OPS_ERROR_ANALYSIS_CN.md

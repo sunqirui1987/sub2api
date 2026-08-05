@@ -159,7 +159,7 @@ function renderPage(config) {
   </style>
 </head>
 <body>
-  <div class="topbar"><div>运维监控与排障</div><div class="admin-chip"><span class="avatar"></span><span>${escapeHtml(config.authUsername)}</span><form class="logout-form" method="post" action="${escapeHtml(config.pagePath)}/logout"><button class="logout-btn" type="submit">退出</button></form></div></div>
+  <div class="topbar"><div class="topbar-brand">运维监控与排障 · 全池视图</div><div class="admin-chip"><span class="avatar"></span><span>${escapeHtml(config.authUsername)}</span><form class="logout-form" method="post" action="${escapeHtml(config.pagePath)}/logout"><button class="logout-btn" type="submit">退出</button></form></div></div>
   <main class="shell">
     <section class="dashboard">
       <header class="heading">
@@ -1299,169 +1299,249 @@ function renderErrorsPage(config) {
   <title>${escapeHtml(pageTitle)}</title>
   <style>
     :root {
-      --bg: #eef8f8;
+      --bg: #f4f6f8;
       --panel: #fff;
-      --soft: #f8fafc;
-      --line: #e6eaf0;
-      --text: #111827;
-      --muted: #7b8494;
-      --blue: #4f7deb;
-      --blue-soft: #dbeafe;
-      --green: #23945b;
-      --red: #d93a35;
-      --amber: #d97706;
-      --shadow: 0 18px 50px rgba(15, 23, 42, .08);
+      --soft: #f7f8fa;
+      --line: #dfe4ea;
+      --line-strong: #ccd4dd;
+      --text: #17202b;
+      --muted: #697586;
+      --blue: #2563eb;
+      --blue-soft: #eaf1ff;
+      --green: #15803d;
+      --red: #c83232;
+      --red-soft: #fff0f0;
+      --amber: #b86008;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; color: var(--text); background: linear-gradient(180deg, #f8fbfd 0, var(--bg) 24rem, #f9fafb 100%); }
+    body { margin: 0; min-height: 100vh; color: var(--text); background: var(--bg); }
     button, input, select { font: inherit; }
-    .topbar { height: 38px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; border-bottom: 1px solid rgba(226,232,240,.72); background: rgba(255,255,255,.78); backdrop-filter: blur(14px); color: #697386; font-size: 13px; font-weight: 700; }
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid rgba(37,99,235,.22); outline-offset: 1px; }
+    .topbar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 max(18px, calc((100vw - 1560px) / 2)); border-bottom: 1px solid var(--line); background: #202731; color: #d7dde5; font-size: 12px; font-weight: 800; }
+    .topbar-brand { display: flex; align-items: center; gap: 10px; }
+    .topbar-brand::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #46b96b; box-shadow: 0 0 0 3px rgba(70,185,107,.15); }
     .admin-chip { display: flex; gap: 10px; align-items: center; }
-    .avatar { width: 30px; height: 30px; border-radius: 999px; background: #49a79b; box-shadow: inset 0 -8px 18px rgba(0,0,0,.1); }
+    .avatar { width: 24px; height: 24px; border-radius: 50%; background: #596779; }
     .logout-form { margin: 0; }
-    .logout-btn { height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #647084; font-size: 12px; font-weight: 900; cursor: pointer; }
-    .shell { width: min(1720px, calc(100vw - 48px)); margin: 24px auto 30px; }
-    .panel { background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); padding: 22px; }
-    .heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
-    h1 { margin: 0 0 5px; font-size: 22px; line-height: 1.15; letter-spacing: 0; }
-    .sub { color: var(--muted); font-size: 13px; font-weight: 750; }
-    .controls { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-    .select, .input, .action-btn { height: 40px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: #334155; font-size: 13px; font-weight: 800; outline: none; }
-    .select { min-width: 170px; padding: 0 12px; }
-    .input { width: 150px; padding: 0 12px; }
-    .input.keyword { width: 260px; }
-    .action-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; cursor: pointer; text-decoration: none; background: #f5f7fa; }
-    .action-btn.primary { color: #2f62dc; background: var(--blue-soft); border-color: transparent; }
-    .filters { display: grid; grid-template-columns: repeat(8, minmax(120px, 1fr)); gap: 10px; margin-top: 18px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--soft); }
-    .filters label { display: grid; gap: 6px; color: #647084; font-size: 12px; font-weight: 900; }
-    .filters .wide { grid-column: span 2; }
-    .filters .actions { display: flex; align-items: end; gap: 8px; justify-content: flex-end; }
-    .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
-    .stat { min-height: 94px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
-    .stat-label { color: #8a94a6; font-size: 12px; font-weight: 950; margin-bottom: 8px; }
-    .stat-value { font-size: 28px; line-height: 1.1; font-weight: 950; color: #111827; }
-    .stat-copy { margin-top: 8px; color: #647084; font-size: 12px; font-weight: 800; line-height: 1.4; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; align-items: start; }
-    .secondary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+    .logout-btn { height: 28px; padding: 0 10px; border: 1px solid #4a5564; border-radius: 6px; background: transparent; color: #d7dde5; font-size: 12px; font-weight: 850; cursor: pointer; }
+    .shell { width: min(1560px, calc(100vw - 36px)); margin: 0 auto 36px; }
+    .panel { min-width: 0; }
+    .heading { min-height: 92px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line-strong); }
+    h1 { margin: 0 0 7px; font-size: 23px; line-height: 1.2; letter-spacing: 0; }
+    .sub { color: var(--muted); font-size: 13px; font-weight: 650; }
+    .controls { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .select, .input, .action-btn { height: 38px; border: 1px solid var(--line-strong); border-radius: 7px; background: #fff; color: #344154; font-size: 13px; font-weight: 750; outline: none; }
+    .select { min-width: 160px; padding: 0 32px 0 10px; }
+    .input { width: 150px; padding: 0 10px; }
+    .input.keyword { width: 100%; }
+    .action-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; cursor: pointer; text-decoration: none; background: #fff; white-space: nowrap; }
+    .action-btn:hover { background: var(--soft); }
+    .action-btn.primary { color: #fff; background: var(--blue); border-color: var(--blue); }
+    .action-btn.primary:hover { background: #1d4ed8; }
+    .filter-workbench { padding: 16px 0 18px; border-bottom: 1px solid var(--line); }
+    .filter-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 10px; }
+    .filter-title { font-size: 13px; font-weight: 900; }
+    .filter-state { min-width: 0; color: var(--muted); font-size: 12px; font-weight: 700; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .filters { display: grid; grid-template-columns: .75fr 1.25fr 1.05fr 1fr .8fr .72fr 1.45fr auto; gap: 9px; align-items: end; }
+    .filters label { min-width: 0; display: grid; gap: 6px; color: #5b6675; font-size: 11px; font-weight: 850; }
+    .filters label .select, .filters label .input { width: 100%; min-width: 0; }
+    .filters .actions { display: flex; align-items: end; gap: 7px; justify-content: flex-end; }
+    .summary-grid { display: grid; grid-template-columns: 1.05fr 1.05fr .8fr .8fr 1.35fr; border-bottom: 1px solid var(--line-strong); background: #fff; }
+    .stat { min-width: 0; min-height: 112px; padding: 18px 20px; border-right: 1px solid var(--line); }
+    .stat:last-child { border-right: 0; }
+    .stat-label { color: #667385; font-size: 11px; font-weight: 900; margin-bottom: 9px; text-transform: uppercase; }
+    .stat-value { min-width: 0; font-size: 27px; line-height: 1.1; font-weight: 950; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .stat-value.danger { color: var(--red); }
+    .stat-copy { margin-top: 8px; color: var(--muted); font-size: 12px; font-weight: 700; line-height: 1.35; }
+    .content-grid { display: grid; gap: 18px; padding-top: 18px; }
+    .diagnosis-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
     .wide-panel { grid-column: 1 / -1; }
-    .section { min-width: 0; border: 1px solid var(--line); border-radius: 14px; background: #fff; overflow: hidden; }
-    .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--line); background: #f8fafc; }
-    .section-head h2 { margin: 0; font-size: 15px; letter-spacing: 0; }
-    .section-head span { color: #8a94a6; font-size: 12px; font-weight: 850; }
-    .account-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: #fff; }
-    .account-hint { color: #647084; font-size: 12px; font-weight: 850; }
-    .sort-controls { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-    .sort-controls label { display: inline-flex; align-items: center; gap: 7px; color: #647084; font-size: 12px; font-weight: 900; }
-    .sort-controls .select { min-width: 148px; height: 34px; border-radius: 9px; }
-    .chart-grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); background: #fbfdff; }
-    .chart { min-width: 0; border: 1px solid var(--line); border-radius: 13px; background: #fff; padding: 12px; }
-    .chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-    .chart-title { color: #334155; font-size: 13px; font-weight: 950; }
-    .chart-sub { color: #8a94a6; font-size: 11px; font-weight: 850; }
-    .chart-canvas { display: block; width: 100%; height: 230px; }
+    .section { min-width: 0; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; overflow: hidden; }
+    .section-head { min-height: 50px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--soft); }
+    .section-head h2 { margin: 0; font-size: 14px; letter-spacing: 0; }
+    .section-head span { min-width: 0; color: var(--muted); font-size: 12px; font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .account-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: #fff; }
+    .account-tools[hidden], .chart-grid[hidden] { display: none; }
+    .account-hint { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .sort-controls { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .sort-controls label { display: inline-flex; align-items: center; gap: 7px; color: #5b6675; font-size: 11px; font-weight: 850; }
+    .sort-controls .select { min-width: 136px; height: 32px; border-radius: 6px; }
+    .chart-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 14px; padding: 14px 16px; border-bottom: 1px solid var(--line); background: #fbfcfd; }
+    .chart { min-width: 0; border-right: 1px solid var(--line); padding-right: 14px; }
+    .chart:last-child { border-right: 0; padding-right: 0; }
+    .chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+    .chart-title { color: #344154; font-size: 12px; font-weight: 900; }
+    .chart-sub { color: var(--muted); font-size: 11px; font-weight: 700; }
+    .chart-canvas { display: block; width: 100%; height: 210px; }
     .rows { display: grid; }
-    .row { display: grid; grid-template-columns: minmax(220px, 1.25fr) 92px minmax(210px, 1.1fr) minmax(190px, .9fr) 76px; gap: 12px; align-items: center; min-height: 64px; padding: 12px 16px; border-bottom: 1px solid var(--line); color: #647084; font-size: 13px; font-weight: 800; }
+    .row { display: grid; gap: 12px; align-items: center; min-height: 58px; padding: 10px 16px; border-bottom: 1px solid var(--line); color: #5f6b7b; font-size: 12px; font-weight: 750; }
     .row:last-child { border-bottom: 0; }
-    .row.account { grid-template-columns: minmax(230px, 1.15fr) repeat(4, minmax(96px, .55fr)) minmax(180px, .8fr) minmax(170px, .8fr) 86px; min-height: 76px; }
-    .row.compact { grid-template-columns: minmax(170px, 1fr) 82px minmax(160px, 1fr); min-height: 54px; }
-    .row.combo { grid-template-columns: minmax(260px, 1.35fr) 92px minmax(260px, 1.1fr) minmax(170px, .8fr); }
-    .row.message { grid-template-columns: minmax(360px, 1.7fr) 86px minmax(260px, 1fr); }
-    .name { min-width: 0; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .minor { color: #8a94a6; font-size: 12px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .metric { color: #334155; font-size: 16px; font-weight: 950; }
+    .row.account { grid-template-columns: minmax(220px, 1.25fr) repeat(4, minmax(88px, .55fr)) minmax(170px, .9fr) minmax(165px, .85fr) 64px; min-height: 70px; }
+    .row.account.scoped { grid-template-columns: minmax(220px, 1.25fr) repeat(4, minmax(88px, .55fr)) minmax(170px, .9fr) minmax(165px, .85fr); }
+    .row.row-head { min-height: 34px; padding-top: 7px; padding-bottom: 7px; background: #fbfcfd; color: #7b8796; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+    .distribution-row { grid-template-columns: minmax(150px, 1fr) 70px minmax(90px, 1fr) minmax(140px, 1fr) 52px; }
+    .message-row { grid-template-columns: minmax(280px, 1.8fr) 70px minmax(110px, .8fr) minmax(160px, 1fr); }
+    .name { min-width: 0; color: #344154; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .name.message { white-space: normal; line-height: 1.45; word-break: break-word; }
+    .minor { color: #8691a0; font-size: 11px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .metric { color: #344154; font-size: 15px; font-weight: 950; }
     .metric.warn { color: var(--amber); }
     .metric.danger { color: var(--red); }
-    .risk { display: inline-flex; align-items: center; width: max-content; min-height: 25px; padding: 3px 9px; border-radius: 8px; background: #f1f5f9; color: #647084; font-size: 12px; font-weight: 950; }
+    .risk { display: inline-flex; align-items: center; width: max-content; min-height: 23px; margin-top: 5px; padding: 2px 7px; border-radius: 5px; background: #edf1f5; color: #5f6b7b; font-size: 11px; font-weight: 900; }
     .risk.warn { color: var(--amber); background: #fff3d8; }
-    .risk.danger { color: var(--red); background: #fde8e8; }
-    .type-list { display: grid; gap: 5px; min-width: 0; }
-    .type-item { display: grid; grid-template-columns: minmax(96px, 1fr) minmax(70px, .7fr); gap: 8px; align-items: center; min-width: 0; cursor: pointer; border-radius: 7px; }
-    .type-item:hover { background: #f1f5f9; }
-    .type-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #647084; }
-    .type-count { color: #334155; text-align: right; font-weight: 950; }
-    .bar-wrap { height: 10px; overflow: hidden; border-radius: 999px; background: #edf2f7; }
+    .risk.danger { color: var(--red); background: var(--red-soft); }
+    .type-list { display: grid; gap: 4px; min-width: 0; }
+    .type-item { display: grid; grid-template-columns: minmax(90px, 1fr) auto; gap: 8px; align-items: center; min-width: 0; cursor: pointer; border-radius: 4px; }
+    .type-item:hover { background: #f1f4f7; }
+    .type-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #5f6b7b; }
+    .type-count { color: #344154; text-align: right; font-weight: 900; }
+    .bar-wrap { height: 7px; overflow: hidden; border-radius: 2px; background: #e9edf2; }
     .bar { height: 100%; min-width: 2px; border-radius: inherit; background: var(--blue); }
     .bar.red { background: var(--red); }
     .chips { display: flex; gap: 5px; flex-wrap: wrap; min-width: 0; }
-    .chip { max-width: 180px; min-height: 24px; display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 8px; background: #f1f5f9; color: #647084; font-size: 12px; line-height: 1.25; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .mini-btn { height: 30px; border: 0; border-radius: 8px; padding: 0 10px; color: #4b5563; background: #f1f5f9; font-size: 12px; font-weight: 900; cursor: pointer; white-space: nowrap; }
-    .mini-btn:hover { background: #e2e8f0; }
-    .examples { display: grid; gap: 10px; padding: 14px 16px; }
-    .example { display: grid; grid-template-columns: 132px minmax(130px, .6fr) minmax(140px, .7fr) minmax(260px, 1.3fr); gap: 12px; align-items: start; padding: 10px 0; border-bottom: 1px solid var(--line); color: #647084; font-size: 13px; font-weight: 800; }
+    .chip { max-width: 180px; min-height: 22px; display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 5px; background: #edf1f5; color: #5f6b7b; font-size: 11px; line-height: 1.25; font-weight: 850; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mini-btn { height: 28px; border: 1px solid var(--line); border-radius: 5px; padding: 0 8px; color: #344154; background: #fff; font-size: 11px; font-weight: 850; cursor: pointer; white-space: nowrap; }
+    .mini-btn:hover { border-color: #9eabb9; background: var(--soft); }
+    .examples { display: grid; }
+    .example { display: grid; grid-template-columns: 132px 88px minmax(160px, .75fr) minmax(280px, 1.7fr); gap: 14px; align-items: start; min-height: 58px; padding: 11px 16px; border-bottom: 1px solid var(--line); color: #5f6b7b; font-size: 12px; font-weight: 750; }
     .example:last-child { border-bottom: 0; }
+    .example.example-head { min-height: 34px; padding-top: 8px; padding-bottom: 8px; background: #fbfcfd; color: #7b8796; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+    .example-message { color: #344154; line-height: 1.5; word-break: break-word; }
+    .status-code { display: inline-flex; width: max-content; min-width: 40px; justify-content: center; padding: 3px 6px; border-radius: 4px; color: var(--red); background: var(--red-soft); font-weight: 950; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-    .empty { padding: 34px 16px; color: #94a3b8; text-align: center; font-weight: 850; }
-    @media (max-width: 1280px) { .filters { grid-template-columns: repeat(4, minmax(0, 1fr)); } .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid, .secondary-grid, .chart-grid { grid-template-columns: 1fr; } }
-    @media (max-width: 760px) { .shell { width: min(100vw - 20px, 740px); } .heading { align-items: flex-start; flex-direction: column; } .controls, .select, .input, .action-btn { width: 100%; } .filters { grid-template-columns: 1fr; } .filters .wide { grid-column: span 1; } .summary-grid { grid-template-columns: 1fr; } .row, .row.account, .row.compact, .row.combo, .row.message, .example { grid-template-columns: 1fr; gap: 7px; } }
+    .empty { padding: 34px 16px; color: #8b96a5; text-align: center; font-weight: 800; }
+    .analysis-loading { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(23,32,43,.42); backdrop-filter: blur(3px); }
+    .analysis-loading.open { display: flex; }
+    .loading-card { width: min(360px, 100%); padding: 24px; border: 1px solid var(--line-strong); border-radius: 10px; background: #fff; box-shadow: 0 20px 60px rgba(23,32,43,.22); text-align: center; }
+    .loading-spinner { width: 30px; height: 30px; margin: 0 auto 14px; border: 3px solid #d9e3f5; border-top-color: var(--blue); border-radius: 50%; animation: analysis-spin .8s linear infinite; }
+    .loading-title { color: var(--text); font-size: 15px; font-weight: 950; }
+    .loading-copy { margin-top: 7px; color: var(--muted); font-size: 12px; font-weight: 700; line-height: 1.5; }
+    @keyframes analysis-spin { to { transform: rotate(360deg); } }
+    @media (max-width: 1280px) {
+      .filters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .stat:nth-child(3) { border-right: 0; }
+      .stat:nth-child(n+4) { border-top: 1px solid var(--line); }
+      .diagnosis-grid, .chart-grid { grid-template-columns: 1fr; }
+      .chart { border-right: 0; padding-right: 0; }
+      .chart:first-child { border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+      .row.account, .row.account.scoped { grid-template-columns: minmax(200px, 1fr) repeat(4, 88px) minmax(160px, .8fr) minmax(150px, .75fr) 58px; overflow-x: auto; }
+      .row.account.scoped { grid-template-columns: minmax(200px, 1fr) repeat(4, 88px) minmax(160px, .8fr) minmax(150px, .75fr); }
+    }
+    @media (max-width: 760px) {
+      .topbar { padding: 0 12px; }
+      .avatar, .admin-chip > span:not(.avatar) { display: none; }
+      .shell { width: calc(100vw - 20px); }
+      .heading { min-height: 0; align-items: flex-start; flex-direction: column; padding: 20px 0 16px; }
+      .controls { justify-content: stretch; width: 100%; }
+      .controls .select { width: 100%; }
+      .controls .action-btn { flex: 1; }
+      .filter-head { align-items: flex-start; flex-direction: column; gap: 4px; }
+      .filter-state { width: 100%; text-align: left; }
+      .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .filters label:last-of-type, .filters .actions { grid-column: 1 / -1; }
+      .filters .actions .action-btn { flex: 1; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stat, .stat:nth-child(3) { min-height: 100px; border-right: 1px solid var(--line); border-top: 1px solid var(--line); padding: 15px; }
+      .stat:nth-child(odd) { border-right: 1px solid var(--line); }
+      .stat:nth-child(even) { border-right: 0; }
+      .stat:first-child, .stat:nth-child(2) { border-top: 0; }
+      .stat:last-child { grid-column: 1 / -1; }
+      .account-tools { align-items: flex-start; flex-direction: column; }
+      .sort-controls { width: 100%; justify-content: stretch; }
+      .sort-controls label { flex: 1; display: grid; }
+      .sort-controls .select { width: 100%; min-width: 0; }
+      .row.account, .row.account.scoped, .distribution-row, .message-row, .example { grid-template-columns: 1fr; gap: 7px; overflow: visible; }
+      .row.row-head, .example.example-head { display: none; }
+      .row.account { padding: 14px; }
+      .distribution-row .bar-wrap { margin: 3px 0; }
+      .example { padding: 14px; }
+    }
+    @media (min-width: 1101px) and (max-width: 1280px) {
+      .summary-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .stat, .stat:nth-child(n+4) { border-top: 0; }
+      .stat:nth-child(3) { border-right: 1px solid var(--line); }
+      .stat:last-child { border-right: 0; }
+    }
   </style>
 </head>
 <body>
   <div class="topbar"><div>运维监控与排障</div><div class="admin-chip"><span class="avatar"></span><span>${escapeHtml(config.authUsername)}</span><form class="logout-form" method="post" action="${escapeHtml(config.pagePath)}/logout"><button class="logout-btn" type="submit">退出</button></form></div></div>
+  <div class="analysis-loading" id="analysisLoading" role="status" aria-live="polite" aria-busy="true"><div class="loading-card"><div class="loading-spinner" aria-hidden="true"></div><div class="loading-title">正在分析</div><div class="loading-copy" id="analysisLoadingCopy">正在读取全部池、账号和代理信息，请稍候。</div></div></div>
   <main class="shell">
     <section class="panel">
       <header class="heading">
-        <div><h1>上游错误分析</h1><div class="sub">第一视角按账号与错误类型定位，再下钻模型和原始错误。</div></div>
+        <div><h1>上游错误分析</h1><div class="sub" id="scopeText">读取全部已配置池 · 按账号、出口 IP 和错误类型聚合</div></div>
         <div class="controls">
-          <select class="select" id="targetSelect" aria-label="服务器"></select>
           <a class="action-btn" id="logsLink" href="${escapeHtml(config.pagePath)}/logs?type=upstream">原始上游错误</a>
           <a class="action-btn" href="${escapeHtml(config.pagePath)}">返回监控</a>
           <button class="action-btn primary" id="refreshBtn" type="button">刷新</button>
         </div>
       </header>
-      <section class="filters">
+      <section class="filter-workbench">
+        <div class="filter-head"><div class="filter-title">筛选条件</div><div class="filter-state" id="filterState">全部池 · 等待加载</div></div>
+        <div class="filters">
         <label>时间范围<select class="select" id="timeRange"><option value="5m">近5分钟</option><option value="30m">近30分钟</option><option value="1h" selected>近1小时</option><option value="6h">近6小时</option><option value="24h">近24小时</option><option value="7d">近7天</option><option value="30d">近30天</option></select></label>
-        <label>账号<select class="select" id="filterAccountID"><option value="">全部账号</option></select></label>
+        <label>账号 / 代理 IP<input class="input" id="filterAccountID" type="search" placeholder="输入邮箱、账号 ID 或出口 IP"></label>
         <label>错误类型<select class="select" id="filterErrorClass"><option value="">全部类型</option><option value="上游过载">上游过载</option><option value="限流/配额限制">限流/配额限制</option><option value="额度/计费不足">额度/计费不足</option><option value="上游认证失败">上游认证失败</option><option value="权限/策略限制">权限/策略限制</option><option value="模型不可用">模型不可用</option><option value="上游超时">上游超时</option><option value="网络/连接错误">网络/连接错误</option><option value="上下文过长">上下文过长</option><option value="请求参数错误">请求参数错误</option><option value="上游服务端错误">上游服务端错误</option><option value="上游客户端错误">上游客户端错误</option><option value="未知错误">未知错误</option></select></label>
         <label>模型<select class="select" id="filterModel"><option value="">全部模型</option></select></label>
         <label>平台<select class="select" id="filterPlatform"><option value="">全部平台</option></select></label>
         <label>状态码<select class="select" id="filterStatusCodes"><option value="">全部状态码</option></select></label>
-        <label class="wide">关键字<input class="input keyword" id="filterQ" type="search" placeholder="错误消息 / request_id"></label>
+        <label>关键字<input class="input keyword" id="filterQ" type="search" placeholder="错误消息 / request_id"></label>
         <div class="actions"><button class="action-btn" id="resetBtn" type="button">重置</button><button class="action-btn primary" id="searchBtn" type="button">分析</button></div>
+        </div>
       </section>
       <section class="summary-grid">
-        <article class="stat"><div class="stat-label">分析错误数</div><div class="stat-value" id="totalErrors">-</div><div class="stat-copy" id="totalCopy">等待加载</div></article>
-        <article class="stat"><div class="stat-label">账号数</div><div class="stat-value" id="accountCount">-</div><div class="stat-copy">出现错误的上游账号</div></article>
-        <article class="stat"><div class="stat-label">模型数</div><div class="stat-value" id="modelCount">-</div><div class="stat-copy">出现错误的模型</div></article>
-        <article class="stat"><div class="stat-label">主因</div><div class="stat-value" id="topClass">-</div><div class="stat-copy" id="topClassCopy">按错误分类统计</div></article>
+        <article class="stat"><div class="stat-label">错误事件</div><div class="stat-value danger" id="totalErrors">-</div><div class="stat-copy" id="totalCopy">等待加载</div></article>
+        <article class="stat"><div class="stat-label">错误 / 请求</div><div class="stat-value" id="errorRate">-</div><div class="stat-copy" id="errorRateCopy">按当前筛选范围计算</div></article>
+        <article class="stat"><div class="stat-label">受影响账号</div><div class="stat-value" id="accountCount">-</div><div class="stat-copy">按账号 + 出口 IP 去重</div></article>
+        <article class="stat"><div class="stat-label">受影响模型</div><div class="stat-value" id="modelCount">-</div><div class="stat-copy">出现上游错误的模型</div></article>
+        <article class="stat"><div class="stat-label">首要原因</div><div class="stat-value" id="topClass">-</div><div class="stat-copy" id="topClassCopy">按错误事件占比</div></article>
       </section>
-      <section class="grid">
+      <section class="content-grid">
         <article class="section">
-          <div class="section-head"><h2>账号与错误类型</h2><span id="accountsMeta">-</span></div>
-          <div class="account-tools">
-            <div class="account-hint">重点看“请求量”和“上游错误率”：高错误率账号更像需要探针或降权。</div>
+          <div class="section-head"><h2 id="accountsTitle">账号级风险</h2><span id="accountsMeta">-</span></div>
+          <div class="account-tools" id="accountTools">
+            <div class="account-hint">先按错误 / 请求比例排序，再用出口 IP 区分同一账号的不同代理链路。</div>
             <div class="sort-controls">
               <label>排序<select class="select" id="accountSort"><option value="risk_score">风险优先</option><option value="upstream_error_rate" selected>上游错误率</option><option value="upstream_error_count">上游错误数</option><option value="request_error_rate">请求错误率</option><option value="request_error_count">请求错误数</option><option value="request_count">请求数</option><option value="latest_at">最近错误</option></select></label>
               <label>方向<select class="select" id="accountSortOrder"><option value="desc" selected>从高到低</option><option value="asc">从低到高</option></select></label>
             </div>
           </div>
-          <div class="chart-grid">
+          <div class="chart-grid" id="accountCharts">
             <div class="chart"><div class="chart-head"><div class="chart-title">账号错误率分布</div><div class="chart-sub">横轴请求数，纵轴上游错误率</div></div><canvas class="chart-canvas" id="accountRateChart"></canvas></div>
             <div class="chart"><div class="chart-head"><div class="chart-title">Top 账号排序</div><div class="chart-sub" id="accountBarSub">按当前排序指标</div></div><canvas class="chart-canvas" id="accountBarChart"></canvas></div>
           </div>
           <div class="rows" id="accountsRows"></div>
         </article>
       </section>
-      <section class="secondary-grid">
-        <article class="section"><div class="section-head"><h2>账号 / 错误类型组合</h2><span id="accountClassesMeta">-</span></div><div class="rows" id="accountClassesRows"></div></article>
-        <article class="section"><div class="section-head"><h2>模型与错误类型</h2><span id="modelsMeta">-</span></div><div class="rows" id="modelsRows"></div></article>
-        <article class="section wide-panel"><div class="section-head"><h2>账号 / 模型组合</h2><span id="accountModelsMeta">-</span></div><div class="rows" id="accountModelsRows"></div></article>
+      <section class="diagnosis-grid">
+        <article class="section"><div class="section-head"><h2>错误原因分布</h2><span id="classesMeta">-</span></div><div class="rows" id="classesRows"></div></article>
+        <article class="section"><div class="section-head"><h2>模型影响</h2><span id="modelsMeta">-</span></div><div class="rows" id="modelsRows"></div></article>
+        <article class="section"><div class="section-head"><h2>代理出口分类</h2><span id="proxyClassesMeta">-</span></div><div class="rows" id="proxyClassesRows"></div></article>
         <article class="section wide-panel"><div class="section-head"><h2>错误消息指纹</h2><span id="messagesMeta">归一化后聚合相似错误</span></div><div class="rows" id="messagesRows"></div></article>
-        <article class="section wide-panel"><div class="section-head"><h2>最新样本</h2><span id="examplesMeta">用于快速确认原始错误</span></div><div class="examples" id="examplesRows"></div></article>
+        <article class="section wide-panel"><div class="section-head"><h2>最新样本</h2><span id="examplesMeta">已用全部样本聚合；此处展示最近 12 条证据</span></div><div class="examples" id="examplesRows"></div></article>
       </section>
     </section>
   </main>
   <script>
     const apiBase = ${JSON.stringify(config.pagePath)};
-    const fallbackTargets = ${JSON.stringify(config.publicTargets)};
     const fmt = new Intl.DateTimeFormat('zh-CN', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const $ = id => document.getElementById(id);
-    let targets = fallbackTargets;
     let data = null;
     let filterTimer = null;
+    let analysisController = null;
     const filterOptionCache = {};
     function esc(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]); }
     function set(id, value) { const el = $(id); if (el) el.textContent = value; }
+    function setAnalysisLoading(open, copy) {
+      const el = $('analysisLoading');
+      if (!el) return;
+      el.classList.toggle('open', Boolean(open));
+      el.setAttribute('aria-busy', open ? 'true' : 'false');
+      if (copy) set('analysisLoadingCopy', copy);
+    }
     function compactNumber(value) {
       const n = Number(value);
       if (!Number.isFinite(n)) return '-';
@@ -1479,7 +1559,6 @@ function renderErrorsPage(config) {
       const d = new Date(value);
       return Number.isFinite(d.getTime()) ? fmt.format(d).replaceAll('/', '-') : String(value);
     }
-    function selectedTarget() { return targets.find(target => target.id === $('targetSelect')?.value) || targets[0]; }
     function ensureSelectOption(id, value, label) {
       const select = $(id);
       const text = String(label || value || '');
@@ -1519,7 +1598,6 @@ function renderErrorsPage(config) {
     }
     function fillFilterOptions(dims) {
       const dimensionData = dims || {};
-      fillSelect('filterAccountID', '全部账号', dimensionData.accounts, item => item.account_id || item.key, item => item.label + ' · ' + compactNumber(item.count));
       fillSelect('filterModel', '全部模型', dimensionData.models, item => item.model || item.key, item => item.label + ' · ' + compactNumber(item.count));
       fillSelect('filterPlatform', '全部平台', dimensionData.platforms, item => item.key, item => item.label + ' · ' + compactNumber(item.count));
       fillSelect('filterStatusCodes', '全部状态码', dimensionData.status_codes, item => item.key, item => item.label + ' · ' + compactNumber(item.count));
@@ -1546,13 +1624,12 @@ function renderErrorsPage(config) {
     }
     function applyUrlState() {
       const params = new URLSearchParams(location.search);
-      ensureSelectOption('filterAccountID', params.get('account_id') || '', params.get('account_id') || '');
       ensureSelectOption('filterModel', params.get('model') || '', params.get('model') || '');
       ensureSelectOption('filterPlatform', params.get('platform') || '', params.get('platform') || '');
       ensureSelectOption('filterStatusCodes', params.get('status_codes') || '', params.get('status_codes') || '');
       writeFilters({
         timeRange: params.get('time_range') || '1h',
-        accountID: params.get('account_id') || '',
+        accountID: params.get('account') || params.get('account_id') || '',
         errorClass: params.get('error_class') || params.get('internal_error_type') || '',
         model: params.get('model') || '',
         platform: params.get('platform') || '',
@@ -1561,11 +1638,9 @@ function renderErrorsPage(config) {
       });
     }
     function syncUrl() {
-      const target = selectedTarget();
       const filters = readFilters();
       const params = new URLSearchParams();
-      if (target && target.id) params.set('target', target.id);
-      const map = { timeRange: 'time_range', accountID: 'account_id', errorClass: 'error_class', model: 'model', platform: 'platform', statusCodes: 'status_codes', q: 'q' };
+      const map = { timeRange: 'time_range', accountID: 'account', errorClass: 'error_class', model: 'model', platform: 'platform', statusCodes: 'status_codes', q: 'q' };
       Object.entries(map).forEach(([key, param]) => {
         const value = filters[key];
         if (value && !(key === 'timeRange' && value === '1h')) params.set(param, value);
@@ -1577,11 +1652,9 @@ function renderErrorsPage(config) {
       const link = $('logsLink');
       if (!link) return;
       const filters = readFilters();
-      const target = selectedTarget();
       const params = new URLSearchParams({ type: 'upstream', view: 'errors' });
-      if (target && target.id) params.set('target', target.id);
       if (filters.timeRange) params.set('time_range', filters.timeRange);
-      if (filters.accountID) params.set('account_id', filters.accountID);
+      if (/^\\d+$/.test(filters.accountID)) params.set('account_id', filters.accountID);
       if (filters.errorClass) params.set('error_class', filters.errorClass);
       if (filters.model) params.set('model', filters.model);
       if (filters.platform) params.set('platform', filters.platform);
@@ -1790,9 +1863,15 @@ function renderErrorsPage(config) {
     function renderAccountSection(items) {
       const rows = sortedAccounts(items);
       const sort = currentAccountSort();
-      set('accountsMeta', compactNumber(rows.length) + ' 个账号 · 按' + (accountSortLabels[sort.by] || sort.by) + (sort.order === 'asc' ? '升序' : '降序'));
-      drawAccountRateChart(rows);
-      drawAccountBarChart(rows);
+      const focused = Boolean(readFilters().accountID);
+      set('accountsTitle', focused ? '账号匹配结果' : '账号级风险');
+      set('accountsMeta', compactNumber(rows.length) + ' 个账号出口 · 按' + (accountSortLabels[sort.by] || sort.by) + (sort.order === 'asc' ? '升序' : '降序'));
+      if ($('accountTools')) $('accountTools').hidden = rows.length <= 1;
+      if ($('accountCharts')) $('accountCharts').hidden = rows.length <= 1;
+      if (rows.length > 1) {
+        drawAccountRateChart(rows);
+        drawAccountBarChart(rows);
+      }
       renderAccountRows(rows);
     }
     function metricCell(label, value, options = {}) {
@@ -1807,53 +1886,62 @@ function renderErrorsPage(config) {
         el.innerHTML = '<div class="empty">暂无数据</div>';
         return;
       }
-      el.innerHTML = rows.map(account => {
+      const focused = Boolean(readFilters().accountID);
+      const header = '<div class="row row-head account' + (focused ? ' scoped' : '') + '"><div>账号</div><div>代理出口</div><div>请求数</div><div>上游错误</div><div>错误 / 请求</div><div>错误分类</div><div>来源池</div>' + (focused ? '' : '<div>操作</div>') + '</div>';
+      el.innerHTML = header + rows.map(account => {
         const risk = riskForAccount(account);
         const reqCount = account.request_count === null || account.request_count === undefined ? '-' : compactNumber(account.request_count);
         const reqErr = account.request_error_count === null || account.request_error_count === undefined ? '-' : compactNumber(account.request_error_count);
         const upstreamErr = compactNumber(account.upstream_error_count || account.count || 0);
         const upstreamRate = ratioText(account.upstream_error_rate);
-        const reqErrRate = account.request_error_rate === null || account.request_error_rate === undefined ? '-' : ratioText(account.request_error_rate);
+        const requestRate = account.request_error_rate === null || account.request_error_rate === undefined ? '-' : ratioText(account.request_error_rate);
         const rateCls = Number(account.upstream_error_rate) >= 0.08 ? 'danger' : Number(account.upstream_error_rate) >= 0.03 ? 'warn' : '';
-        const title = '<div><div class="name" title="' + esc(account.label) + '">' + esc(account.label) + '</div><div class="minor">最近 ' + esc(formatTime(account.latest_at)) + '</div></div>';
-        const action = '<button class="mini-btn" type="button" data-filter-kind="account" data-filter-value="' + esc(account.account_id || account.key) + '">下钻</button>';
-        return '<div class="row account">' +
+        const title = '<div><div class="name" title="' + esc(account.label) + '">' + esc(account.label) + '</div><div class="minor">请求错误 ' + esc(reqErr) + ' · ' + esc(requestRate) + '</div><div class="minor">最近 ' + esc(formatTime(account.latest_at)) + '</div></div>';
+        const proxy = '<div><div class="name mono" title="' + esc(account.proxy_label || '-') + '">' + esc(account.proxy_label || '-') + '</div><div class="minor">' + esc(account.proxy_name || (account.proxy_id ? '代理 #' + account.proxy_id : '无代理')) + '</div></div>';
+        const filterValue = account.label + (account.proxy_ip ? ' ' + account.proxy_ip : '');
+        const action = focused ? '' : '<button class="mini-btn" type="button" data-filter-kind="account" data-filter-value="' + esc(filterValue) + '">查看</button>';
+        return '<div class="row account' + (focused ? ' scoped' : '') + '">' +
           title +
+          proxy +
           metricCell('请求数', reqCount) +
-          metricCell('请求错误', reqErr + (reqErrRate !== '-' ? ' · ' + reqErrRate : '')) +
           metricCell('上游错误', upstreamErr) +
-          metricCell('上游错误率', upstreamRate, { cls: rateCls }) +
+          metricCell('错误 / 请求', upstreamRate, { cls: rateCls }) +
           typeList(account.classes) +
-          '<div><div class="chips">' + topChips(account.models) + '</div><div class="risk ' + risk.cls + '">' + risk.label + '</div></div>' +
+          '<div><div class="chips">' + topChips(account.sources) + '</div><div class="risk ' + risk.cls + '">' + risk.label + '</div></div>' +
           action +
           '</div>';
       }).join('');
     }
-    function renderBucketRows(id, items, options = {}) {
+    function renderDistributionRows(id, items, options = {}) {
       const el = $(id);
       if (!el) return;
       const rows = Array.isArray(items) ? items : [];
-      const limit = options.limit || 8;
       if (!rows.length) {
         el.innerHTML = '<div class="empty">暂无数据</div>';
         return;
       }
-      el.innerHTML = rows.slice(0, limit).map(item => {
-        const cls = options.kind === 'message' ? 'row message' : options.kind === 'combo' ? 'row combo' : options.kind === 'compact' ? 'row compact' : 'row';
-        const barClass = options.red ? 'bar red' : 'bar';
+      const header = '<div class="row row-head distribution-row"><div>' + esc(options.title || '分类') + '</div><div>错误数</div><div>占比</div><div>' + esc(options.detailTitle || '关联维度') + '</div><div>操作</div></div>';
+      el.innerHTML = header + rows.slice(0, options.limit || 10).map(item => {
         const title = '<div><div class="name" title="' + esc(item.label) + '">' + esc(item.label) + '</div><div class="minor">' + esc(item.latest_at ? '最近 ' + formatTime(item.latest_at) : '') + '</div></div>';
         const count = '<div><div class="metric">' + compactNumber(item.count) + '</div><div class="minor">' + pct(item.percent) + '</div></div>';
-        const detail = options.detail === 'types'
-          ? typeList(item.classes)
-          : '<div class="chips">' + topChips(options.chips === 'accounts' ? item.accounts : options.chips === 'models' ? item.models : item.classes) + '</div>';
+        const bar = '<div class="bar-wrap"><div class="bar red" style="width:' + Math.max(2, Math.min(100, Number(item.percent || 0) * 100)).toFixed(1) + '%"></div></div>';
+        const details = options.detail === 'models' ? item.models : options.detail === 'accounts' ? item.accounts : item.classes;
         const button = options.filter
-          ? '<button class="mini-btn" type="button" data-filter-kind="' + esc(options.filter) + '" data-filter-value="' + esc(item[options.filterValue || 'key']) + '">下钻</button>'
-          : '<div class="bar-wrap"><div class="' + barClass + '" style="width:' + Math.max(2, Math.min(100, Number(item.percent || 0) * 100)).toFixed(1) + '%"></div></div>';
-        if (options.kind === 'compact') return '<div class="' + cls + '">' + title + count + detail + '</div>';
-        if (options.kind === 'message') return '<div class="' + cls + '">' + title + count + detail + '</div>';
-        if (options.kind === 'combo') return '<div class="' + cls + '">' + title + count + detail + '<div class="bar-wrap"><div class="' + barClass + '" style="width:' + Math.max(2, Math.min(100, Number(item.percent || 0) * 100)).toFixed(1) + '%"></div></div></div>';
-        return '<div class="' + cls + '">' + title + count + detail + '<div class="chips">' + topChips(item.models) + '</div>' + button + '</div>';
+          ? '<button class="mini-btn" type="button" data-filter-kind="' + esc(options.filter) + '" data-filter-value="' + esc(item[options.valueKey || 'key']) + '">筛选</button>'
+          : '<span class="minor">-</span>';
+        return '<div class="row distribution-row">' + title + count + bar + '<div class="chips">' + topChips(details) + '</div>' + button + '</div>';
       }).join('');
+    }
+    function renderMessageRows(items) {
+      const el = $('messagesRows');
+      if (!el) return;
+      const rows = Array.isArray(items) ? items : [];
+      if (!rows.length) {
+        el.innerHTML = '<div class="empty">暂无数据</div>';
+        return;
+      }
+      const header = '<div class="row row-head message-row"><div>归一化消息</div><div>错误数</div><div>占比</div><div>代理出口</div></div>';
+      el.innerHTML = header + rows.slice(0, 12).map(item => '<div class="row message-row"><div><div class="name message">' + esc(item.label) + '</div><div class="minor">最近 ' + esc(formatTime(item.latest_at)) + '</div></div><div><div class="metric">' + compactNumber(item.count) + '</div><div class="minor">' + pct(item.percent) + '</div></div><div class="bar-wrap"><div class="bar red" style="width:' + Math.max(2, Math.min(100, Number(item.percent || 0) * 100)).toFixed(1) + '%"></div></div><div class="chips">' + topChips(item.proxy_ips) + '</div></div>').join('');
     }
     function renderExamples(items) {
       const el = $('examplesRows');
@@ -1863,8 +1951,10 @@ function renderErrorsPage(config) {
         el.innerHTML = '<div class="empty">暂无样本</div>';
         return;
       }
-      el.innerHTML = rows.map(item => {
-        return '<div class="example"><div>' + esc(formatTime(item.created_at)) + '<div class="minor mono">' + esc(item.request_id || '-') + '</div></div><div><strong>' + esc(item.status_code || '-') + '</strong><div class="minor">' + esc(item.error_class || '-') + '</div></div><div>' + esc(item.account_name || item.account_id || '-') + '<div class="minor">' + esc(item.model || '-') + '</div></div><div>' + esc(item.message || '-') + '</div></div>';
+      const header = '<div class="example example-head"><div>时间 / Request ID</div><div>状态</div><div>账号 / 来源</div><div>错误消息</div></div>';
+      el.innerHTML = header + rows.map(item => {
+        const source = [item.target_name, item.proxy_label].filter(Boolean).join(' · ');
+        return '<div class="example"><div>' + esc(formatTime(item.created_at)) + '<div class="minor mono">' + esc(item.request_id || '-') + '</div></div><div><span class="status-code">' + esc(item.status_code || '-') + '</span><div class="minor">' + esc(item.error_class || '-') + '</div></div><div><div class="name">' + esc(item.account_name || item.account_id || '-') + '</div><div class="minor">' + esc(source || item.model || '-') + '</div></div><div class="example-message">' + esc(item.message || '-') + '<div class="minor">' + esc(item.model || '-') + '</div></div></div>';
       }).join('');
     }
     function renderAnalysis() {
@@ -1873,70 +1963,78 @@ function renderErrorsPage(config) {
       fillFilterOptions(dims);
       set('totalErrors', compactNumber(data && data.items_analyzed));
       const filters = readFilters();
+      const accounts = dims.accounts || [];
+      const requestTotal = accounts.reduce((sum, account) => {
+        const value = Number(account.request_count);
+        return Number.isFinite(value) ? sum + value : sum;
+      }, 0);
+      const upstreamRate = requestTotal > 0 ? Number(data.items_analyzed || 0) / requestTotal : null;
+      const targetStatuses = Array.isArray(data && data.target_statuses) ? data.target_statuses : [];
+      const failedTargets = targetStatuses.filter(item => !item.ok);
+      const activeFilters = [filters.accountID, filters.errorClass, filters.model, filters.platform, filters.statusCodes, filters.q].filter(Boolean).length;
       const scannedText = data && data.scanned_total !== undefined ? compactNumber(data.scanned_total) : compactNumber(data && data.remote_total);
-      set('totalCopy', filters.errorClass ? '命中 ' + compactNumber(data && data.items_analyzed) + ' / 已读取 ' + scannedText + ' 条' : data && data.limited ? '已读取 ' + compactNumber(data.scanned_total) + ' / 远端 ' + compactNumber(data.remote_total) + ' 条' : '已读取全部 ' + compactNumber(data && data.scanned_total) + ' 条');
-      set('accountCount', compactNumber((dims.accounts || []).length));
+      set('totalCopy', '扫描 ' + scannedText + ' 条 · ' + compactNumber(data && data.target_count) + ' / ' + compactNumber(data && data.target_total) + ' 个池可用');
+      set('errorRate', upstreamRate === null ? '-' : ratioText(upstreamRate));
+      set('errorRateCopy', requestTotal > 0 ? compactNumber(data.items_analyzed) + ' 个上游错误 / ' + compactNumber(requestTotal) + ' 个请求' : '当前接口未返回请求总数');
+      set('accountCount', compactNumber(accounts.length));
       set('modelCount', compactNumber((dims.models || []).length));
       set('topClass', classes[0] ? classes[0].label : '-');
       set('topClassCopy', classes[0] ? compactNumber(classes[0].count) + ' 条 · ' + pct(classes[0].percent) : '按错误分类统计');
       set('modelsMeta', compactNumber((dims.models || []).length) + ' 个模型');
-      set('accountClassesMeta', compactNumber((dims.account_classes || []).length) + ' 个组合');
-      set('accountModelsMeta', compactNumber((dims.account_models || []).length) + ' 个组合');
-      renderAccountSection(dims.accounts);
-      renderBucketRows('accountClassesRows', dims.account_classes, { kind: 'combo', limit: 10, chips: 'models', red: true });
-      renderBucketRows('modelsRows', dims.models, { kind: 'compact', limit: 10, detail: 'types' });
-      renderBucketRows('accountModelsRows', dims.account_models, { kind: 'combo', limit: 10, chips: 'classes', red: true });
-      renderBucketRows('messagesRows', dims.messages, { kind: 'message', limit: 10, chips: 'accounts', red: true });
+      set('classesMeta', compactNumber(classes.length) + ' 类 · 按错误数降序');
+      set('filterState', compactNumber(data && data.target_count) + ' 个池已读取' + (failedTargets.length ? ' · ' + failedTargets.length + ' 个失败' : '') + (activeFilters ? ' · ' + activeFilters + ' 个筛选条件' : ' · 全部账号'));
+      set('scopeText', filters.accountID ? '全部池 · 匹配账号或出口：' + filters.accountID : '读取全部已配置池 · 按账号、出口 IP 和错误类型聚合');
+      renderAccountSection(accounts);
+      renderDistributionRows('classesRows', classes, { title: '错误类型', detailTitle: '主要模型', detail: 'models', filter: 'error_class', valueKey: 'label' });
+      renderDistributionRows('modelsRows', dims.models, { title: '模型', detailTitle: '主要原因', detail: 'classes', filter: 'model', valueKey: 'model' });
+      set('proxyClassesMeta', compactNumber((dims.proxy_classes || []).length) + ' 类');
+      renderDistributionRows('proxyClassesRows', dims.proxy_classes, { title: '出口类型', detailTitle: '主要账号', detail: 'accounts' });
+      renderMessageRows(dims.messages);
       renderExamples(data && data.examples);
     }
-    async function loadTargets() {
-      try {
-        const response = await fetch(apiBase + '/api/targets', { cache: 'no-store' });
-        if (response.ok) targets = await response.json();
-      } catch {}
-      const select = $('targetSelect');
-      if (!select) return;
-      select.innerHTML = targets.length ? targets.map(target => '<option value="' + esc(target.id) + '">' + esc(target.name) + (target.configured ? '' : '（未配置Key）') + '</option>').join('') : '<option value="">未配置服务器</option>';
-      const params = new URLSearchParams(location.search);
-      const fromUrl = params.get('target');
-      const saved = localStorage.getItem('public_ops_target');
-      if (fromUrl && targets.some(target => target.id === fromUrl)) select.value = fromUrl;
-      else if (saved && targets.some(target => target.id === saved)) select.value = saved;
-      updateLogsLink();
-    }
     async function loadAnalysis() {
+      if (analysisController) analysisController.abort();
+      analysisController = new AbortController();
+      const requestSignal = analysisController.signal;
+      setAnalysisLoading(true, '正在读取全部池、账号和代理信息，请稍候。');
       syncUrl();
       set('totalErrors', '...');
-      set('totalCopy', '正在读取全部上游错误');
-      const target = selectedTarget();
+      set('totalCopy', '正在读取全部池的上游错误');
+      set('filterState', '正在并行读取全部池...');
       const filters = readFilters();
       const query = new URLSearchParams({
-        target: target && target.id ? target.id : '',
         time_range: filters.timeRange,
         page_size: '500',
         view: 'errors',
         phase: 'upstream'
       });
-      if (filters.accountID) query.set('account_id', filters.accountID);
+      if (filters.accountID) query.set('account', filters.accountID);
       if (filters.errorClass) query.set('error_class', filters.errorClass);
       if (filters.model) query.set('model', filters.model);
       if (filters.platform) query.set('platform', filters.platform);
       if (filters.statusCodes) query.set('status_codes', filters.statusCodes);
       if (filters.q) query.set('q', filters.q);
       try {
-        const response = await fetch(apiBase + '/api/upstream-error-analysis?' + query.toString(), { cache: 'no-store' });
+        const response = await fetch(apiBase + '/api/upstream-error-analysis?' + query.toString(), { cache: 'no-store', signal: requestSignal });
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const payload = await response.json();
         data = payload.data || payload;
         renderAnalysis();
       } catch (err) {
+        if (err && err.name === 'AbortError') return;
         data = null;
         set('totalErrors', '-');
         set('totalCopy', '加载失败：' + (err && err.message ? err.message : err));
-        ['accountsRows', 'modelsRows', 'accountClassesRows', 'accountModelsRows', 'messagesRows', 'examplesRows'].forEach(id => {
+        set('filterState', '全部池读取失败');
+        ['accountsRows', 'classesRows', 'modelsRows', 'proxyClassesRows', 'messagesRows', 'examplesRows'].forEach(id => {
           const el = $(id);
           if (el) el.innerHTML = '<div class="empty">加载失败</div>';
         });
+      } finally {
+        if (analysisController && analysisController.signal === requestSignal) {
+          analysisController = null;
+          setAnalysisLoading(false);
+        }
       }
     }
     function scheduleLoad() {
@@ -1953,23 +2051,24 @@ function renderErrorsPage(config) {
       if (kind === 'model' && value) $('filterModel').value = value;
       loadAnalysis().catch(console.error);
     });
-    $('targetSelect')?.addEventListener('change', () => { localStorage.setItem('public_ops_target', $('targetSelect').value); loadAnalysis().catch(console.error); });
     $('refreshBtn')?.addEventListener('click', () => loadAnalysis().catch(console.error));
     $('searchBtn')?.addEventListener('click', () => loadAnalysis().catch(console.error));
     $('resetBtn')?.addEventListener('click', () => {
       writeFilters({ timeRange: '1h' });
       loadAnalysis().catch(console.error);
     });
-    ['timeRange', 'filterAccountID', 'filterErrorClass', 'filterModel', 'filterPlatform', 'filterStatusCodes'].forEach(id => $(id)?.addEventListener('change', scheduleLoad));
+    ['timeRange', 'filterErrorClass', 'filterModel', 'filterPlatform', 'filterStatusCodes'].forEach(id => $(id)?.addEventListener('change', scheduleLoad));
     ['accountSort', 'accountSortOrder'].forEach(id => $(id)?.addEventListener('change', () => {
       if (data && data.dimensions) renderAccountSection(data.dimensions.accounts || []);
     }));
     window.addEventListener('resize', () => {
       if (data && data.dimensions) renderAccountSection(data.dimensions.accounts || []);
     });
-    $('filterQ')?.addEventListener('input', scheduleLoad);
+    ['filterAccountID', 'filterQ'].forEach(id => $(id)?.addEventListener('keydown', event => {
+      if (event.key === 'Enter') loadAnalysis().catch(console.error);
+    }));
     applyUrlState();
-    loadTargets().then(() => loadAnalysis()).catch(console.error);
+    loadAnalysis().catch(console.error);
   </script>
 </body>
 </html>`
