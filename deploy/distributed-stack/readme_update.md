@@ -117,7 +117,7 @@ ls -lh "$BACKUP_ROOT"
 设置新镜像变量：
 
 ```bash
-export NEW_IMAGE="crpi-4p61yfj4kgj9iup9.cn-hangzhou.personal.cr.aliyuncs.com/lincanvas/sub2api:version-20260710151710"
+export NEW_IMAGE="crpi-4p61yfj4kgj9iup9.cn-hangzhou.personal.cr.aliyuncs.com/lincanvas/sub2api:version-20260805204228"
 ```
 
 修改 App 部署目录里的镜像：
